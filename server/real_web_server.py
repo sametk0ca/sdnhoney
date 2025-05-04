@@ -1,154 +1,121 @@
 #!/usr/bin/env python3
-import http.server
-import socketserver
+from http.server import HTTPServer, SimpleHTTPRequestHandler
 import logging
-import socket
+import sys
 import os
-import json
-from datetime import datetime
+import socket
 
-# Loglamayı ayarla
-LOG_DIR = "/home/samet/capstone/logs"
-os.makedirs(LOG_DIR, exist_ok=True)
+# Get hostname for logging
+hostname = socket.gethostname()
 
-# Harici IP adresi tespiti
-def get_hostname():
-    try:
-        host_name = socket.gethostname()
-        return host_name
-    except:
-        return "unknown"
-
-HOST_NAME = get_hostname()
-
+# Configure logging - fixed to avoid using %(hostname)s in the format string
 logging.basicConfig(
+    format='%(asctime)s - %(levelname)s - %(message)s',
     level=logging.INFO,
-    format='%(asctime)s - [' + HOST_NAME + '] - %(levelname)s - %(message)s',
-    handlers=[
-        logging.FileHandler(f'{LOG_DIR}/web_server_{HOST_NAME}.log'),
-        logging.StreamHandler()
-    ]
 )
 
-PORT = 80
-SERVER_NAME = f"WebServer-{HOST_NAME}"
+logger = logging.getLogger('web_server')
+logger.info(f"Starting real web server on {hostname}")
 
-class RealWebHandler(http.server.SimpleHTTPRequestHandler):
-    server_version = "Apache/2.4.41 (Ubuntu)"
-    sys_version = ""
+class CustomHTTPRequestHandler(SimpleHTTPRequestHandler):
+    """Custom HTTP request handler that logs all requests in detail"""
     
     def log_message(self, format, *args):
-        logging.info(f"{self.client_address[0]} - {format%args}")
-    
-    def version_string(self):
-        return self.server_version
+        """Override to send logs to our logger instead of stderr"""
+        logger.info("%s - %s", self.address_string(), format % args)
     
     def do_GET(self):
-        """GET isteklerini işle"""
-        client_ip = self.client_address[0]
-        logging.info(f"GET isteği alındı: {self.path} from {client_ip}")
+        """Handle GET request and log details"""
+        logger.info(f"Received GET request - Path: {self.path}")
+        logger.info(f"Headers: {self.headers}")
         
-        if self.path == "/":
-            self.send_response(200)
-            self.send_header("Content-type", "text/html")
-            self.end_headers()
-            
-            # HTML içeriği oluştur
-            html = f"""
-            <!DOCTYPE html>
-            <html>
-            <head>
-                <title>Web Server {HOST_NAME}</title>
-                <style>
-                    body {{ font-family: Arial, sans-serif; margin: 40px; line-height: 1.6; }}
-                    .container {{ max-width: 800px; margin: 0 auto; padding: 20px; border: 1px solid #ddd; border-radius: 5px; }}
-                    h1 {{ color: #4285f4; }}
-                    .info {{ background-color: #f8f9fa; padding: 15px; border-radius: 4px; }}
-                </style>
-            </head>
-            <body>
-                <div class="container">
-                    <h1>Welcome to {SERVER_NAME}</h1>
-                    <div class="info">
-                        <p><strong>Server Information:</strong></p>
-                        <ul>
-                            <li>Server: {self.server_version}</li>
-                            <li>Hostname: {HOST_NAME}</li>
-                            <li>Current Time: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}</li>
-                            <li>Client IP: {client_ip}</li>
-                        </ul>
-                    </div>
-                    <p>This is a secure web server running on the SDN network.</p>
-                </div>
-            </body>
-            </html>
-            """
-            
-            self.wfile.write(html.encode())
+        # Check if this is a potential attack (just for demonstration)
+        if '../' in self.path or '\\' in self.path or 'passwd' in self.path or 'etc' in self.path:
+            logger.warning(f"Potential path traversal attack detected: {self.path}")
         
-        elif self.path == "/api/status":
-            self.send_response(200)
-            self.send_header("Content-type", "application/json")
-            self.end_headers()
-            
-            status = {
-                "status": "ok",
-                "server": HOST_NAME,
-                "time": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-                "uptime": "1 day, 3 hours"
-            }
-            
-            self.wfile.write(json.dumps(status).encode())
-        
-        else:
-            self.send_response(404)
-            self.send_header("Content-type", "text/html")
-            self.end_headers()
-            self.wfile.write(b"<h1>404 Not Found</h1><p>The requested resource was not found on this server.</p>")
-
+        # Normal response - serve static content
+        return SimpleHTTPRequestHandler.do_GET(self)
+    
     def do_POST(self):
-        """POST isteklerini işle"""
-        client_ip = self.client_address[0]
+        """Handle POST request and log details"""
         content_length = int(self.headers.get('Content-Length', 0))
-        post_data = self.rfile.read(content_length)
+        post_data = self.rfile.read(content_length).decode('utf-8')
         
-        logging.info(f"POST isteği alındı: {self.path} from {client_ip}")
-        logging.debug(f"POST veri: {post_data.decode('utf-8', 'ignore')}")
+        logger.info(f"Received POST request - Path: {self.path}")
+        logger.info(f"Headers: {self.headers}")
+        logger.info(f"Body: {post_data}")
         
-        if self.path == "/api/login":
-            self.send_response(200)
-            self.send_header("Content-type", "application/json")
-            self.end_headers()
-            
-            response = {
-                "success": True,
-                "message": "Login successful",
-                "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ"
-            }
-            
-            self.wfile.write(json.dumps(response).encode())
-        else:
-            self.send_response(404)
-            self.send_header("Content-type", "application/json")
-            self.end_headers()
-            
-            response = {
-                "success": False,
-                "message": "Endpoint not found"
-            }
-            
-            self.wfile.write(json.dumps(response).encode())
+        # Send a simple response
+        self.send_response(200)
+        self.send_header('Content-type', 'text/html')
+        self.end_headers()
+        self.wfile.write(f"<html><body><h1>Hello from {hostname}</h1><p>POST received!</p></body></html>".encode())
 
-def run_server():
-    handler = RealWebHandler
-    httpd = socketserver.TCPServer(("", PORT), handler)
-    logging.info(f"{SERVER_NAME} başlatıldı: http://localhost:{PORT}")
+def run(port=8080, server_class=HTTPServer, handler_class=CustomHTTPRequestHandler):
+    """Run the HTTP server"""
+    # Create an example index.html if it doesn't exist
+    if not os.path.exists('index.html'):
+        with open('index.html', 'w') as f:
+            f.write(f"""<!DOCTYPE html>
+<html>
+<head>
+    <title>Real Web Server - {hostname}</title>
+    <style>
+        body {{ font-family: Arial, sans-serif; margin: 40px; }}
+        .container {{ max-width: 800px; margin: 0 auto; }}
+        h1 {{ color: #0066cc; }}
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Welcome to {hostname}</h1>
+        <p>This is a legitimate web server running on the SDN network.</p>
+        <p>Current time: <span id="time"></span></p>
+        
+        <h2>Test Form</h2>
+        <form method="post" action="/submit">
+            <div>
+                <label for="name">Name:</label>
+                <input type="text" id="name" name="name">
+            </div>
+            <div style="margin-top: 10px;">
+                <label for="message">Message:</label>
+                <textarea id="message" name="message" rows="4" cols="50"></textarea>
+            </div>
+            <div style="margin-top: 10px;">
+                <input type="submit" value="Submit">
+            </div>
+        </form>
+    </div>
+    
+    <script>
+        function updateTime() {{
+            document.getElementById('time').textContent = new Date().toLocaleString();
+        }}
+        updateTime();
+        setInterval(updateTime, 1000);
+    </script>
+</body>
+</html>""")
+    
+    server_address = ('0.0.0.0', port)
+    httpd = server_class(server_address, handler_class)
+    logger.info(f"Starting HTTP server on 0.0.0.0:{port}")
     try:
         httpd.serve_forever()
     except KeyboardInterrupt:
         pass
     httpd.server_close()
-    logging.info(f"{SERVER_NAME} durduruldu")
+    logger.info("HTTP server stopped")
 
-if __name__ == "__main__":
-    run_server() 
+if __name__ == '__main__':
+    # Create a directory for this host in the current directory instead of /tmp
+    os.makedirs(f"./{hostname}", exist_ok=True)
+    os.chdir(f"./{hostname}")
+    
+    try:
+        # Ensure we're binding to all interfaces (0.0.0.0)
+        run(port=8080, server_class=HTTPServer, handler_class=CustomHTTPRequestHandler)
+    except Exception as e:
+        logging.error(f"Server error: {e}")
+        sys.exit(1) 

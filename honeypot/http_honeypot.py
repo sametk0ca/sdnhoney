@@ -1,374 +1,372 @@
 #!/usr/bin/env python3
-import http.server
-import socketserver
+from http.server import HTTPServer, SimpleHTTPRequestHandler
 import logging
-import json
+import sys
 import os
-import time
-import threading
-import random
 import socket
-import re
-from datetime import datetime
-from urllib.parse import urlparse, parse_qs
+import time
+import json
+import random
+import datetime
 
-# Loglama dizini
-LOG_DIR = "/home/samet/capstone/logs"
-os.makedirs(LOG_DIR, exist_ok=True)
-
-# Log dosyası ayarları
+# Configure logging
+log_dir = "logs"
+os.makedirs(log_dir, exist_ok=True)
 logging.basicConfig(
     level=logging.INFO,
-    format='%(asctime)s - [HONEYPOT] - %(levelname)s - %(message)s',
+    format='%(asctime)s - %(levelname)s - %(message)s',
     handlers=[
-        logging.FileHandler(f'{LOG_DIR}/honeypot.log'),
-        logging.StreamHandler()
+        logging.FileHandler(os.path.join(log_dir, "host8_honeypot.log")),
+        logging.StreamHandler(sys.stdout)
     ]
 )
+logger = logging.getLogger(__name__)
 
-# İzlenen saldırganlar için veri yapısı
-ATTACKERS = {}
-SUSPICIOUS_PATHS = [
-    '/wp-admin', '/wp-login', '/admin', '/login', '/phpmyadmin', 
-    '/xmlrpc.php', '/cgi-bin', '/config', '/.git', '/.env',
-    '/shell', '/cmd', '/exec', '/passwd', '/index.php',
-    '/setup.php', '/install', '/backup'
-]
-
-# Olası SQL injection saldırılarını tespit et
-SQL_INJECTION_PATTERNS = [
-    r"('|\").*OR.*('|\")",
-    r"('|\").*UNION.*SELECT.*('|\")",
-    r".*DROP TABLE.*",
-    r".*--.*",
-    r".*SELECT.*FROM.*"
-]
-
-# Olası XSS saldırılarını tespit et
-XSS_PATTERNS = [
-    r"<script.*>",
-    r"javascript:",
-    r"onerror=",
-    r"onload=",
-    r"eval\(",
-    r"document\.cookie"
-]
-
-# Zaman aşımı eklenerek sunucu gerçekçi görünsün
-def random_delay():
-    time.sleep(random.uniform(0.05, 0.3))
-
-class HoneypotHTTPHandler(http.server.SimpleHTTPRequestHandler):
-    server_version = "Apache/2.4.41 (Ubuntu)"
-    sys_version = ""
+class HoneypotHTTPRequestHandler(SimpleHTTPRequestHandler):
+    """HTTP Honeypot that mimics a real server but logs everything"""
     
-    def version_string(self):
-        # Server başlığını gerçekçi göster
-        return self.server_version
+    server_version = "Apache/2.4.41 (Ubuntu)"  # Fake server version
+    sys_version = ""  # Hide Python version
+    
+    # List of fake directories and files to simulate a real server
+    fake_dirs = [
+        '/admin', '/login', '/dashboard', '/wp-admin', '/phpmyadmin',
+        '/api', '/user', '/account', '/profile', '/settings'
+    ]
+    
+    fake_files = [
+        'index.php', 'login.php', 'admin.php', 'config.php', 'wp-login.php',
+        'wp-config.php', '.env', '.git/HEAD', 'README.md', 'robots.txt'
+    ]
+    
+    # Track IP connections to detect scanning and DoS
+    ip_connections = {}
+    
+    def __init__(self, *args, **kwargs):
+        # Initialize connection tracking for this request
+        client_ip = args[2][0] if len(args) > 2 else "unknown"
+        if client_ip not in self.ip_connections:
+            self.ip_connections[client_ip] = {
+                "first_seen": time.time(),
+                "last_seen": time.time(),
+                "request_count": 0,
+                "paths": set()
+            }
+        
+        # Call the parent constructor
+        super().__init__(*args, **kwargs)
     
     def log_message(self, format, *args):
-        # Normal HTTP server log formatını engelle
-        pass
+        """Override to log all requests to our file"""
+        msg = format % args
+        # Log with more visibility at WARNING level instead of INFO
+        logger.warning(f"HONEYPOT: {self.client_address[0]}:{self.client_address[1]} - {msg}")
     
-    def detect_attack(self, path, query, headers, method):
-        """Saldırı tespiti yap"""
-        attack_types = []
+    def log_attack(self, attack_type, details):
+        """Log potential attack with additional details"""
+        attack_data = {
+            'timestamp': datetime.datetime.now().isoformat(),
+            'client_ip': self.client_address[0],
+            'client_port': self.client_address[1],
+            'attack_type': attack_type,
+            'path': self.path,
+            'headers': dict(self.headers),
+            'details': details,
+        }
         
-        # SQL Injection tespiti
-        if query:
-            query_str = '&'.join([f"{k}={v[0]}" for k, v in query.items()])
-            for pattern in SQL_INJECTION_PATTERNS:
-                if re.search(pattern, query_str, re.IGNORECASE):
-                    attack_types.append("SQL Injection")
-                    break
+        # Log the attack data
+        logger.warning(f"ATTACK DETECTED - {attack_type}: {json.dumps(attack_data)}")
         
-        # XSS tespiti
-        for pattern in XSS_PATTERNS:
-            if query and any(re.search(pattern, v[0], re.IGNORECASE) for k, v in query.items()):
-                attack_types.append("XSS")
-                break
-        
-        # Şüpheli yollar
-        for susp_path in SUSPICIOUS_PATHS:
-            if susp_path in path:
-                attack_types.append("Path Traversal")
-                break
-                
-        # Admin paneli veya sisteme erişim girişimleri
-        if '/admin' in path or '/login' in path or '/wp-admin' in path:
-            attack_types.append("Admin Access Attempt")
-        
-        return attack_types if attack_types else None
+        # Also save to a structured file for ML training
+        with open(os.path.join(log_dir, "attack_data.json"), 'a') as f:
+            f.write(json.dumps(attack_data) + '\n')
     
-    def log_attack(self, client_ip, attack_types, path, method):
-        """Saldırı ve saldırganı logla"""
-        timestamp = datetime.now()
+    def track_connection(self):
+        """Track connection patterns for this IP"""
+        client_ip = self.client_address[0]
         
-        if client_ip not in ATTACKERS:
-            ATTACKERS[client_ip] = {
-                'first_seen': timestamp,
-                'attacks': []
-            }
+        # Update tracking info
+        self.ip_connections[client_ip]["last_seen"] = time.time()
+        self.ip_connections[client_ip]["request_count"] += 1
+        self.ip_connections[client_ip]["paths"].add(self.path)
         
-        ATTACKERS[client_ip]['attacks'].append({
-            'timestamp': timestamp,
-            'method': method,
-            'path': path,
-            'type': attack_types
-        })
+        # Calculate request rate (requests per second)
+        first_seen = self.ip_connections[client_ip]["first_seen"]
+        last_seen = self.ip_connections[client_ip]["last_seen"]
+        request_count = self.ip_connections[client_ip]["request_count"]
         
-        ATTACKERS[client_ip]['last_seen'] = timestamp
+        time_diff = max(last_seen - first_seen, 0.001)  # Avoid division by zero
+        request_rate = request_count / time_diff
         
-        # Log olarak kaydet
-        attack_type_str = ', '.join(attack_types)
-        logging.warning(f"SALDIRI TESPİT EDİLDİ - IP: {client_ip}, Yöntem: {method}, Yol: {path}, Tip: {attack_type_str}")
+        # Log high rate requests
+        if request_rate > 2.0:  # More than 2 requests per second
+            self.log_attack('high_request_rate', {
+                'rate': request_rate,
+                'count': request_count,
+                'duration': time_diff
+            })
+        
+        # Log scanning behavior (multiple different paths)
+        path_count = len(self.ip_connections[client_ip]["paths"])
+        if path_count > 5:
+            self.log_attack('scanning_behavior', {
+                'unique_paths': list(self.ip_connections[client_ip]["paths"]),
+                'path_count': path_count
+            })
     
     def do_GET(self):
-        client_ip = self.client_address[0]
-        parsed_url = urlparse(self.path)
-        path = parsed_url.path
-        query = parse_qs(parsed_url.query)
+        """Handle GET requests, detecting potential attacks"""
+        # Track connection patterns
+        self.track_connection()
         
-        # İsteği logla
-        logging.info(f"GET isteği alındı: {self.path} from {client_ip}")
+        # Log the request details (log as WARNING to make it more visible)
+        logger.warning(f"HONEYPOT GOT REQUEST: {self.client_address[0]}:{self.client_address[1]} - GET {self.path}")
+        logger.warning(f"HONEYPOT HEADERS: {dict(self.headers)}")
         
-        # Saldırı tespit et
-        attack_types = self.detect_attack(path, query, self.headers, 'GET')
-        if attack_types:
-            self.log_attack(client_ip, attack_types, path, 'GET')
+        # Check for attack signatures with more patterns
+        # Path traversal attacks
+        if any(pattern in self.path.lower() for pattern in ['../', '..%2f', '..\\', '.htaccess', 'etc/passwd', 'wp-config', 'etc/', 'windows/', 'system32']):
+            self.log_attack('path_traversal', {'path': self.path})
+            
+        # Command injection attacks
+        if any(pattern in self.path.lower() for pattern in ['exec', 'eval', 'system', 'cmd', 'shell', 'passthru', 'bash', '`', '$(', '&&']):
+            self.log_attack('command_injection', {'path': self.path})
         
-        # Rastgele gecikme ekle
-        random_delay()
+        # SQL injection attacks
+        if any(pattern in self.path.lower() for pattern in ['select', 'union', 'from', 'where', '1=1', '--', 'information_schema', 
+                                                         "';", "' or", "' and", '%27', 'drop', 'insert', 'update']):
+            self.log_attack('sql_injection', {'path': self.path})
         
-        # Yanıtları hazırla
-        if path == '/':
+        # XSS attacks
+        if any(pattern in self.path.lower() for pattern in ['<script', 'javascript:', 'onerror', 'onload', 'alert(', 'document.cookie', 'img src', 'iframe']):
+            self.log_attack('xss', {'path': self.path})
+        
+        # Check for port scanning (unusual ports in headers or connection)
+        if self.client_address[1] < 1024 or self.client_address[1] > 50000:
+            self.log_attack('unusual_port', {'client_port': self.client_address[1]})
+        
+        # Log any unusual HTTP methods
+        method = self.command
+        if method not in ['GET', 'POST']:
+            self.log_attack('unusual_http_method', {'method': method})
+        
+        # Log any unusual User-Agent
+        user_agent = self.headers.get('User-Agent', '')
+        if not user_agent or user_agent in ['', 'curl', 'wget', 'python-requests']:
+            self.log_attack('unusual_user_agent', {'user_agent': user_agent})
+        
+        # Detect DoS attacks by checking if we've seen too many requests from this IP
+        if self.ip_connections[self.client_address[0]]["request_count"] > 50:
+            self.log_attack('potential_dos', {
+                'request_count': self.ip_connections[self.client_address[0]]["request_count"],
+                'time_period': time.time() - self.ip_connections[self.client_address[0]]["first_seen"]
+            })
+        
+        # Simulate a delay to seem like a real server (0.2-1.0 seconds)
+        time.sleep(random.uniform(0.2, 1.0))
+        
+        # Handle some common paths to seem legitimate
+        if self.path == '/':
             self.send_response(200)
             self.send_header('Content-type', 'text/html')
             self.end_headers()
-            
-            html = f'''
-            <!DOCTYPE html>
-            <html>
-            <head>
-                <title>Web Server</title>
-                <style>
-                    body {{ font-family: Arial, sans-serif; margin: 40px; line-height: 1.6; }}
-                    .container {{ max-width: 800px; margin: 0 auto; padding: 20px; border: 1px solid #ddd; border-radius: 5px; }}
-                    h1 {{ color: #4285f4; }}
-                    .info {{ background-color: #f8f9fa; padding: 15px; border-radius: 4px; }}
-                </style>
-            </head>
-            <body>
-                <div class="container">
-                    <h1>Welcome to Our Web Server</h1>
-                    <div class="info">
-                        <p><strong>Server Information:</strong></p>
-                        <ul>
-                            <li>Server: {self.server_version}</li>
-                            <li>Hostname: server8</li>
-                            <li>Current Time: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}</li>
-                            <li>Client IP: {client_ip}</li>
-                        </ul>
-                    </div>
-                    <p>This is a secure web server running on the SDN network.</p>
-                    <div>
-                        <p>Quick Links:</p>
-                        <ul>
-                            <li><a href="/api/status">Server Status</a></li>
-                            <li><a href="/login">Admin Login</a></li>
-                        </ul>
-                    </div>
-                </div>
-            </body>
-            </html>
-            '''
-            
-            self.wfile.write(html.encode())
-            
-        elif path == '/api/status':
-            self.send_response(200)
-            self.send_header('Content-type', 'application/json')
-            self.end_headers()
-            
-            status = {
-                "status": "ok",
-                "server": "server8",
-                "time": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-                "uptime": "3 days, 14 hours",
-                "connections": random.randint(5, 25)
-            }
-            
-            self.wfile.write(json.dumps(status).encode())
-            
-        elif path == '/login':
+            self.wfile.write(self.get_index_page().encode())
+            logger.warning(f"HONEYPOT SENT RESPONSE: 200 OK to {self.client_address[0]}:{self.client_address[1]}")
+            return
+        
+        elif self.path == '/login' or self.path == '/login.php':
             self.send_response(200)
             self.send_header('Content-type', 'text/html')
             self.end_headers()
-            
-            html = '''
-            <!DOCTYPE html>
-            <html>
-            <head>
-                <title>Login - Web Server</title>
-                <style>
-                    body { font-family: Arial, sans-serif; margin: 40px; line-height: 1.6; }
-                    .container { max-width: 500px; margin: 0 auto; padding: 20px; border: 1px solid #ddd; border-radius: 5px; }
-                    h1 { color: #4285f4; }
-                    .form-group { margin-bottom: 15px; }
-                    label { display: block; margin-bottom: 5px; }
-                    input[type="text"], input[type="password"] { width: 100%; padding: 8px; box-sizing: border-box; }
-                    button { background-color: #4285f4; color: white; border: none; padding: 10px 15px; cursor: pointer; }
-                </style>
-            </head>
-            <body>
-                <div class="container">
-                    <h1>Admin Login</h1>
-                    <form action="/api/login" method="post">
-                        <div class="form-group">
-                            <label for="username">Username:</label>
-                            <input type="text" id="username" name="username" required>
-                        </div>
-                        <div class="form-group">
-                            <label for="password">Password:</label>
-                            <input type="password" id="password" name="password" required>
-                        </div>
-                        <button type="submit">Login</button>
-                    </form>
-                </div>
-            </body>
-            </html>
-            '''
-            
-            self.wfile.write(html.encode())
-            
-        else:
-            self.send_response(404)
+            self.wfile.write(self.get_login_page().encode())
+            logger.warning(f"HONEYPOT SENT RESPONSE: 200 OK to {self.client_address[0]}:{self.client_address[1]}")
+            return
+        
+        elif self.path == '/admin' or self.path == '/admin.php':
+            self.send_response(401)
             self.send_header('Content-type', 'text/html')
+            self.send_header('WWW-Authenticate', 'Basic realm="Admin Area"')
             self.end_headers()
-            
-            html = '''
-            <!DOCTYPE html>
-            <html>
-            <head>
-                <title>404 Not Found</title>
-                <style>
-                    body { font-family: Arial, sans-serif; margin: 40px; line-height: 1.6; }
-                    .container { max-width: 500px; margin: 0 auto; padding: 20px; border: 1px solid #ddd; border-radius: 5px; }
-                    h1 { color: #d93025; }
-                </style>
-            </head>
-            <body>
-                <div class="container">
-                    <h1>404 Not Found</h1>
-                    <p>The requested resource was not found on this server.</p>
-                    <p><a href="/">Return to Homepage</a></p>
-                </div>
-            </body>
-            </html>
-            '''
-            
-            self.wfile.write(html.encode())
+            self.wfile.write(b'<html><body><h1>401 Unauthorized</h1><p>You need to authenticate to access this page.</p></body></html>')
+            logger.warning(f"HONEYPOT SENT RESPONSE: 401 Unauthorized to {self.client_address[0]}:{self.client_address[1]}")
+            return
+        
+        # For any 404 responses, still provide plausible content
+        self.send_response(404)
+        self.send_header('Content-type', 'text/html')
+        self.end_headers()
+        self.wfile.write(self.get_404_page().encode())
+        logger.warning(f"HONEYPOT SENT RESPONSE: 404 Not Found to {self.client_address[0]}:{self.client_address[1]}")
     
     def do_POST(self):
-        client_ip = self.client_address[0]
+        """Handle POST requests, detecting potential attacks"""
         content_length = int(self.headers.get('Content-Length', 0))
-        post_data = self.rfile.read(content_length).decode('utf-8', 'ignore')
+        post_data = self.rfile.read(content_length).decode('utf-8')
         
-        # POST isteğini logla
-        logging.info(f"POST isteği alındı: {self.path} from {client_ip}")
-        logging.info(f"POST veri: {post_data}")
+        # Log the POST request details
+        logger.warning(f"HONEYPOT GOT REQUEST: {self.client_address[0]}:{self.client_address[1]} - POST {self.path}")
+        logger.warning(f"HONEYPOT HEADERS: {dict(self.headers)}")
+        logger.warning(f"HONEYPOT POST DATA: {post_data}")
         
-        # Saldırı tespiti
-        parsed_url = urlparse(self.path)
-        path = parsed_url.path
-        
-        # POST verilerini analiz et
-        attack_types = self.detect_attack(path, None, self.headers, 'POST')
-        
-        # Post içeriğindeki saldırıları tespit et
-        for pattern in SQL_INJECTION_PATTERNS:
-            if re.search(pattern, post_data, re.IGNORECASE):
-                if attack_types is None:
-                    attack_types = []
-                if "SQL Injection" not in attack_types:
-                    attack_types.append("SQL Injection")
-        
-        for pattern in XSS_PATTERNS:
-            if re.search(pattern, post_data, re.IGNORECASE):
-                if attack_types is None:
-                    attack_types = []
-                if "XSS" not in attack_types:
-                    attack_types.append("XSS")
-        
-        if attack_types:
-            self.log_attack(client_ip, attack_types, path, 'POST')
-        
-        # Rastgele gecikme ekle
-        random_delay()
-        
-        if path == '/api/login':
-            self.send_response(200)
-            self.send_header('Content-type', 'application/json')
-            self.end_headers()
+        # Check for attack signatures in POST data
+        # Path traversal attacks
+        if any(pattern in post_data.lower() for pattern in ['../', '..%2f', '..\\', '.htaccess', 'etc/passwd', 'wp-config', 'etc/', 'windows/', 'system32']):
+            self.log_attack('path_traversal', {'path': self.path, 'post_data': post_data})
             
-            # Eğer bu bir saldırı ise, başarısız login yanıtı ver
-            if attack_types:
-                response = {
-                    "success": False,
-                    "message": "Invalid username or password"
-                }
-            else:
-                response = {
-                    "success": True,
-                    "message": "Login successful",
-                    "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ"
-                }
+        # Command injection attacks
+        if any(pattern in post_data.lower() for pattern in ['exec', 'eval', 'system', 'cmd', 'shell', 'passthru', 'bash', '`', '$(', '&&']):
+            self.log_attack('command_injection', {'path': self.path, 'post_data': post_data})
+        
+        # SQL injection attacks
+        if any(pattern in post_data.lower() for pattern in ['select', 'union', 'from', 'where', '1=1', '--', 'information_schema', 
+                                                         "';", "' or", "' and", '%27', 'drop', 'insert', 'update']):
+            self.log_attack('sql_injection', {'path': self.path, 'post_data': post_data})
+        
+        # XSS attacks
+        if any(pattern in post_data.lower() for pattern in ['<script', 'javascript:', 'onerror', 'onload', 'alert(', 'document.cookie', 'img src', 'iframe']):
+            self.log_attack('xss', {'path': self.path, 'post_data': post_data})
             
-            self.wfile.write(json.dumps(response).encode())
-        else:
-            self.send_response(404)
-            self.send_header('Content-type', 'application/json')
-            self.end_headers()
+        # CSRF attacks
+        if 'csrf' not in post_data.lower() and self.path not in ['/login', '/logout', '/register']:
+            self.log_attack('potential_csrf', {'path': self.path, 'post_data': post_data})
             
-            response = {
-                "success": False,
-                "message": "Endpoint not found"
-            }
-            
-            self.wfile.write(json.dumps(response).encode())
+        # Simulate a delay to seem like a real server (0.2-1.0 seconds)
+        time.sleep(random.uniform(0.2, 1.0))
+        
+        # Generic response for all POST requests
+        self.send_response(200)
+        self.send_header('Content-type', 'text/html')
+        self.end_headers()
+        self.wfile.write(b'{"success": true, "message": "Request processed"}')
+        logger.warning(f"HONEYPOT SENT RESPONSE: 200 OK to {self.client_address[0]}:{self.client_address[1]}")
+    
+    def get_index_page(self):
+        """Generate a realistic-looking index page"""
+        return f"""<!DOCTYPE html>
+<html>
+<head>
+    <title>Welcome to Company XYZ</title>
+    <style>
+        body {{ font-family: Arial, sans-serif; margin: 0; padding: 0; }}
+        header {{ background-color: #333; color: white; padding: 20px; }}
+        nav {{ background-color: #444; padding: 10px; }}
+        nav a {{ color: white; margin-right: 15px; text-decoration: none; }}
+        .container {{ padding: 20px; max-width: 1200px; margin: 0 auto; }}
+        footer {{ background-color: #333; color: white; padding: 20px; text-align: center; }}
+    </style>
+</head>
+<body>
+    <header>
+        <h1>Company XYZ</h1>
+    </header>
+    <nav>
+        <a href="/">Home</a>
+        <a href="/about">About Us</a>
+        <a href="/services">Services</a>
+        <a href="/contact">Contact</a>
+        <a href="/login">Login</a>
+    </nav>
+    <div class="container">
+        <h2>Welcome to Our Website</h2>
+        <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nullam auctor, nisl eget ultricies ultricies, nisl nisl ultricies nisl, eget ultricies nisl nisl eget.</p>
+        <p>Server time: {datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}</p>
+        <h3>Our Services</h3>
+        <ul>
+            <li>Web Development</li>
+            <li>Mobile Apps</li>
+            <li>Cloud Solutions</li>
+            <li>Consulting</li>
+        </ul>
+    </div>
+    <footer>
+        &copy; {datetime.datetime.now().year} Company XYZ. All rights reserved.
+    </footer>
+</body>
+</html>"""
+    
+    def get_login_page(self):
+        """Generate a realistic-looking login page"""
+        error_msg = '<p style="color: red;">Invalid username or password. Please try again.</p>' if 'error=1' in self.path else ''
+        return f"""<!DOCTYPE html>
+<html>
+<head>
+    <title>Login - Company XYZ</title>
+    <style>
+        body {{ font-family: Arial, sans-serif; margin: 0; padding: 0; }}
+        header {{ background-color: #333; color: white; padding: 20px; }}
+        .container {{ padding: 20px; max-width: 400px; margin: 0 auto; }}
+        .form-group {{ margin-bottom: 15px; }}
+        label {{ display: block; margin-bottom: 5px; }}
+        input {{ width: 100%; padding: 8px; box-sizing: border-box; }}
+        button {{ background-color: #4CAF50; color: white; padding: 10px 15px; border: none; cursor: pointer; }}
+    </style>
+</head>
+<body>
+    <header>
+        <h1>Company XYZ</h1>
+    </header>
+    <div class="container">
+        <h2>Login</h2>
+        {error_msg}
+        <form method="post" action="/login">
+            <div class="form-group">
+                <label for="username">Username:</label>
+                <input type="text" id="username" name="username" required>
+            </div>
+            <div class="form-group">
+                <label for="password">Password:</label>
+                <input type="password" id="password" name="password" required>
+            </div>
+            <button type="submit">Login</button>
+        </form>
+        <p><a href="/forgot-password">Forgot Password?</a></p>
+    </div>
+</body>
+</html>"""
+    
+    def get_404_page(self):
+        """Generate a realistic-looking 404 page"""
+        return """<!DOCTYPE html>
+<html>
+<head>
+    <title>404 Not Found</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 0; padding: 0; text-align: center; }
+        .container { padding: 50px; }
+        h1 { font-size: 48px; margin-bottom: 20px; }
+        p { font-size: 18px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>404</h1>
+        <h2>Page Not Found</h2>
+        <p>The page you are looking for does not exist or has been moved.</p>
+        <p><a href="/">Return to Homepage</a></p>
+    </div>
+</body>
+</html>"""
 
-def report_thread():
-    """Düzenli olarak saldırı raporu oluştur"""
-    while True:
-        if ATTACKERS:
-            logging.info(f"--- Honeypot Saldırı Özeti ({len(ATTACKERS)} saldırgan) ---")
-            for ip, data in ATTACKERS.items():
-                attack_count = len(data['attacks'])
-                last_seen = data['last_seen'].strftime('%Y-%m-%d %H:%M:%S')
-                logging.info(f"IP: {ip}, Saldırı Sayısı: {attack_count}, Son Görülme: {last_seen}")
-        
-        time.sleep(300)  # 5 dakikada bir rapor
-
-def run_server():
-    port = 80
-    handler = HoneypotHTTPHandler
-    
-    # IPv4 adresi ile bağlan
-    httpd = socketserver.TCPServer(("", port), handler)
-    
-    # Arka planda raporlama işlemini başlat
-    report_timer = threading.Thread(target=report_thread, daemon=True)
-    report_timer.start()
-    
-    logging.info(f"Honeypot HTTP sunucusu başlatıldı: http://localhost:{port}")
-    
+def run(port=8080, server_class=HTTPServer, handler_class=HoneypotHTTPRequestHandler):
+    """Run the HTTP honeypot server"""
+    server_address = ('0.0.0.0', port)  # Bind to all interfaces
+    httpd = server_class(server_address, handler_class)
+    logger.warning(f"Starting HTTP honeypot on 0.0.0.0:{port}")
     try:
         httpd.serve_forever()
     except KeyboardInterrupt:
         pass
-    
     httpd.server_close()
-    logging.info("Honeypot HTTP sunucusu durduruldu")
+    logger.warning("HTTP honeypot stopped")
 
-if __name__ == "__main__":
-    run_server() 
+if __name__ == '__main__':
+    # Create logs directory if it doesn't exist
+    os.makedirs(log_dir, exist_ok=True)
+    
+    print("Starting HTTP honeypot (h8)")
+    logger.warning("HONEYPOT STARTING")
+    try:
+        run()
+    except Exception as e:
+        logger.error(f"Server error: {e}")
+        sys.exit(1) 

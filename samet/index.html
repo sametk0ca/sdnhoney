@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Real Web Server - samet</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 40px; }
+        .container { max-width: 800px; margin: 0 auto; }
+        h1 { color: #0066cc; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Welcome to samet</h1>
+        <p>This is a legitimate web server running on the SDN network.</p>
+        <p>Current time: <span id="time"></span></p>
+        
+        <h2>Test Form</h2>
+        <form method="post" action="/submit">
+            <div>
+                <label for="name">Name:</label>
+                <input type="text" id="name" name="name">
+            </div>
+            <div style="margin-top: 10px;">
+                <label for="message">Message:</label>
+                <textarea id="message" name="message" rows="4" cols="50"></textarea>
+            </div>
+            <div style="margin-top: 10px;">
+                <input type="submit" value="Submit">
+            </div>
+        </form>
+    </div>
+    
+    <script>
+        function updateTime() {
+            document.getElementById('time').textContent = new Date().toLocaleString();
+        }
+        updateTime();
+        setInterval(updateTime, 1000);
+    </script>
+</body>
+</html>

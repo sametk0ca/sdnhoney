@@ -1,4 +1,4 @@
-#!/home/samet/capstone/venv/bin/python3.9
+#!/home/samet/Desktop/sdnhoney/venv/bin/python
 # -*- coding: utf-8 -*-
 import re
 import sys

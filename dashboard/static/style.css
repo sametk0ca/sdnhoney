@@ -1,0 +1,225 @@
+:root {
+    --bg-color: #f8f9fa;
+    --card-bg: #ffffff;
+    --text-color: #343a40;
+    --primary-color: #007bff;
+    --border-color: #dee2e6;
+    --shadow-color: rgba(0, 0, 0, 0.05);
+    --log-bg: #212529;
+    --log-text: #e9ecef;
+    --host-icon-color: #6c757d;
+    --host-connected-color: #28a745;
+    --host-disconnected-color: #dc3545; /* Keep red for disconnected */
+    --error-bg: #f8d7da;
+    --error-text: #721c24;
+    --error-border: #f5c6cb;
+}
+
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    margin: 0;
+    padding: 20px;
+    background-color: var(--bg-color);
+    color: var(--text-color);
+    line-height: 1.6;
+}
+
+h1 {
+    text-align: center;
+    color: var(--primary-color);
+    margin-bottom: 30px;
+    font-weight: 300;
+}
+
+.dashboard-container {
+    display: grid;
+    grid-template-columns: 1fr 2fr; /* Left column for status/switches, right column for MAC table */
+    grid-template-rows: auto auto auto auto auto; /* Status, switches, hosts, logs, honeypot logs */
+    gap: 15px; /* Smaller overall gap */
+    column-gap: 20px; /* Reduce horizontal gap between columns */
+    max-width: 1600px; /* Keep reasonable max width */
+    margin: 20px auto;
+}
+
+.card {
+    background-color: var(--card-bg);
+    border-radius: 10px;
+    padding: 20px 25px;
+    box-shadow: 0 4px 12px var(--shadow-color);
+    border: 1px solid var(--border-color);
+    display: flex;
+    flex-direction: column; /* Stack title and content */
+    overflow: hidden; /* Prevent content spill */
+    min-height: 150px; /* Ensure cards have some minimum height */
+}
+
+.card h2 {
+    margin-top: 0;
+    margin-bottom: 15px;
+    color: var(--primary-color);
+    border-bottom: 1px solid var(--border-color);
+    padding-bottom: 10px;
+    font-size: 1.1em;
+    font-weight: 600;
+}
+
+/* Specific Card Layouts - Based on Excalidraw */
+.status-card {
+    grid-column: 1 / 2; /* Left column */
+    grid-row: 1 / 2;    /* Row 1 - Status */
+    min-height: fit-content; /* Keep vertically small */
+}
+
+.switches-card {
+    grid-column: 1 / 2; /* Left column */
+    grid-row: 2 / 3;    /* Row 2 - Switches */
+    min-height: fit-content; /* Keep vertically small */
+}
+
+.mac-table-card {
+    grid-column: 2 / 3; /* Right column */
+    grid-row: 1 / 3;    /* Span rows 1-2 (status and switches) */
+    height: 400px;     /* Increased height */
+    display: flex;
+    flex-direction: column;
+}
+
+.hosts-card {
+    grid-column: 1 / 3; /* Full width in row 3 */
+    grid-row: 3 / 4;    /* Row 3 - Hosts */
+    text-align: center; /* Center text content */
+    display: flex;
+    flex-direction: column;
+    align-items: center; /* Center items horizontally */
+}
+
+.controller-log-card {
+    grid-column: 2 / 3; /* Left column */
+    grid-row: 4 / 5;    /* Row 4 - Logs */
+    height: 300px;     /* Taller for logs */
+}
+
+.ml-log-card {
+    grid-column: 1 / 2; /* Right column */
+    grid-row: 4 / 5;    /* Row 4 - Logs */
+    height: 300px;     /* Taller for logs */
+}
+
+.honeypot-log-card {
+    grid-column: 1 / 3; /* Full width in a new row */
+    grid-row: 5 / 6;    /* Row 5 - Honeypot logs */
+    height: 300px;     /* Same height as other logs */
+}
+
+/* Log Card Base Style */
+.log-card {
+    background-color: var(--log-bg);
+    color: var(--log-text);
+}
+.log-card h2 {
+    color: #adb5bd;
+    border-bottom-color: #495057;
+}
+
+/* Adjust Element heights within cards if needed */
+#switch-list {
+    max-height: 180px; /* Allow more content */
+    overflow-y: auto;  /* Add vertical scrolling */
+    margin: 0;
+    padding-left: 20px;
+}
+
+pre {
+    margin: 0;
+    overflow: visible; /* Let container handle scrolling */
+}
+#mac-table {
+    overflow-y: auto;  /* Enable vertical scrolling */
+    flex-grow: 1;      /* Take up remaining space in the card */
+    padding: 10px;
+}
+.hosts-card .host-container {
+    max-height: 300px; /* Allow more height */
+    overflow-y: auto;
+}
+
+/* Fix for controller log updating issue */
+#controller-log,
+#ml-model-log {
+    max-height: 260px; /* More space for logs */
+    overflow-y: auto; /* Enable vertical scrolling */
+    padding: 10px;
+    font-family: monospace;
+    white-space: pre-wrap; /* Maintain line breaks but wrap if needed */
+    overflow-x: hidden; /* Prevent horizontal scrolling */
+    word-break: break-all; /* Ensure long words break to prevent layout issues */
+}
+
+/* Tooltip Styling */
+.tooltip {
+    position: absolute; /* Position relative to viewport or nearest positioned ancestor */
+    background-color: rgba(0, 0, 0, 0.8);
+    color: white;
+    padding: 8px 12px;
+    border-radius: 5px;
+    font-size: 0.85em;
+    white-space: nowrap; /* Prevent wrapping */
+    z-index: 100; /* Ensure it's on top */
+    display: none; /* Hidden by default */
+    pointer-events: none; /* Allow mouse events to pass through */
+    transition: opacity 0.2s;
+}
+
+/* Host list styling to create a grid of hosts */
+.host-container {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+    gap: 15px;
+    width: 90%; /* Leave some margin on sides */
+    margin: 0 auto; /* Center the grid */
+    justify-content: center; /* Center grid items */
+}
+
+/* Host icons and text */
+.host-icon {
+    font-size: 2.2em; /* Bigger icon */
+    margin-bottom: 8px;
+}
+
+.host-name {
+    font-size: 1.1em; /* Bigger hostname text */
+    font-weight: 500;
+}
+
+.host-item {
+    padding: 12px;
+    text-align: center;
+}
+
+/* Add refresh indicator styles */
+#refresh-indicator {
+    position: fixed;
+    top: 10px;
+    right: 10px;
+    background-color: rgba(0, 0, 0, 0.7);
+    color: white;
+    padding: 5px 10px;
+    border-radius: 5px;
+    font-size: 0.8rem;
+    z-index: 1000;
+}
+
+#refresh-indicator.refreshing {
+    background-color: #4CAF50;
+    animation: pulse 1s infinite;
+}
+
+@keyframes pulse {
+    0% { opacity: 0.7; }
+    50% { opacity: 1; }
+    100% { opacity: 0.7; }
+}
+
+#refresh-indicator.error {
+    background-color: #f44336;
+} 

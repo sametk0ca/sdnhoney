@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SDN Honeypot Dashboard</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <h1>SDN Honeypot Dashboard</h1>
+
+    <div class="dashboard-container">
+        <div class="card status-card">
+            <h2>Controller Status</h2>
+            <p id="controller-status">Loading...</p>
+        </div>
+
+        <div class="card switches-card">
+            <h2>Connected Switches (DPIDs)</h2>
+            <ul id="switch-list"><li>Loading...</li></ul>
+        </div>
+
+        <div class="card mac-table-card">
+            <h2>MAC Table</h2>
+            <pre id="mac-table">Loading...</pre>
+        </div>
+
+        <div class="card hosts-card">
+            <h2>Connected Hosts</h2>
+            <div id="host-list" class="host-container">Loading...</div>
+        </div>
+
+        <div class="card log-card controller-log-card">
+            <h2>Controller Log (Last 20 Lines)</h2>
+            <pre id="controller-log">Loading...</pre>
+        </div>
+
+        <div class="card log-card ml-log-card">
+            <h2>ML Model Log (Last 20 Lines)</h2>
+            <pre id="ml-model-log">Loading...</pre>
+        </div>
+        
+        <div class="card log-card host8-honeypot-log-card">
+            <h2>Host8 Honeypot Log (Last 50 Lines)</h2>
+            <pre id="host8-honeypot-log">Loading...</pre>
+        </div>
+
+        <!-- Add sections for ML Decisions later -->
+
+    </div>
+
+    <div id="error-message" class="error"></div>
+
+    <!-- Tooltip Element (Initially Hidden) -->
+    <div id="host-tooltip" class="tooltip"></div>
+
+    <script src="{{ url_for('static', filename='dashboard.js') }}"></script>
+</body>
+</html> 
