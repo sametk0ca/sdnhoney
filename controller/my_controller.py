@@ -87,12 +87,8 @@ class MyController(app_manager.RyuApp):
             ]
         }
         
-        # Load configuration
-        config = configparser.ConfigParser()
-        config.read('controller/controller_config.ini')
-        self.honeypot_ip = config.get('Network', 'honeypot_ip', fallback='10.0.0.8')
-        self.honeypot_mac = config.get('Network', 'honeypot_mac', fallback='00:00:00:00:00:08')
-        self.honeypot_port = int(config.get('Network', 'honeypot_port', fallback='8'))
+        # Reload configuration (always reload to get latest values)
+        self.reload_config()
         
         # Log the honeypot configuration
         self.logger.info(f"Honeypot configured at IP: {self.honeypot_ip}, MAC: {self.honeypot_mac}, Port: {self.honeypot_port}")
@@ -119,6 +115,32 @@ class MyController(app_manager.RyuApp):
         # Force external1 into suspected IPs list for testing
         self.suspected_ips.add('10.0.0.9')
         self.suspected_ips.add('10.0.0.11')  # Also add attack simulator IP
+
+    def reload_config(self):
+        """Reload configuration from the controller_config.ini file"""
+        config = configparser.ConfigParser()
+        config_path = os.path.join(os.path.dirname(__file__), 'controller_config.ini')
+        
+        if not os.path.exists(config_path):
+            self.logger.error(f"Config file not found at {config_path}")
+            # Set default values
+            self.honeypot_ip = '10.0.0.8'
+            self.honeypot_mac = '00:00:00:00:00:08'
+            self.honeypot_port = 8
+            return
+        
+        try:
+            config.read(config_path)
+            self.honeypot_ip = config.get('Network', 'honeypot_ip', fallback='10.0.0.8')
+            self.honeypot_mac = config.get('Network', 'honeypot_mac', fallback='00:00:00:00:00:08')
+            self.honeypot_port = int(config.get('Network', 'honeypot_port', fallback='8'))
+            self.logger.info(f"Loaded config: honeypot_ip={self.honeypot_ip}, honeypot_mac={self.honeypot_mac}, honeypot_port={self.honeypot_port}")
+        except Exception as e:
+            self.logger.error(f"Error loading config: {e}")
+            # Set default values
+            self.honeypot_ip = '10.0.0.8'
+            self.honeypot_mac = '00:00:00:00:00:08'
+            self.honeypot_port = 8
 
     def is_multicast_or_broadcast(self, mac):
         # Multicast adresleri (33:33, 01:00:5e, 01:80:c2) ve broadcast (ff:ff:ff:ff:ff:ff) kontrol et
@@ -325,6 +347,35 @@ class MyController(app_manager.RyuApp):
         self.add_flow(datapath, 100, match, actions, idle_timeout=300)
         logging.warning(f"Honeypot yönlendirme kuralı eklendi: {ip_pkt.src} -> {self.honeypot_ip}")
         
+        # Add flow to direct all traffic from this source to honeypot
+        self.add_flow(datapath, 100, match, actions, idle_timeout=300)
+        
+        # Install a more general flow rule for all traffic from this IP
+        general_match = parser.OFPMatch(
+            eth_type=ether_types.ETH_TYPE_IP,
+            ipv4_src=ip_pkt.src
+        )
+        
+        # Add general flow rule with lower priority
+        self.add_flow(datapath, 90, general_match, actions, idle_timeout=300)
+        
+        # Create a copy of the current packet and modify it
+        eth = ip_pkt.get_protocols(ethernet.ethernet)[0]
+        ip_header = ip_pkt.get_protocol(ipv4.ipv4)
+        eth.dst = self.honeypot_mac
+        ip_header.dst = self.honeypot_ip
+        
+        # Send the modified packet to the honeypot
+        out = parser.OFPPacketOut(
+            datapath=datapath,
+            buffer_id=ofproto.OFP_NO_BUFFER,
+            in_port=in_port,
+            actions=actions,
+            data=ip_pkt.serialize()
+        )
+        datapath.send_msg(out)
+        
+        self.logger.warning(f"Redirected packet from {ip_pkt.src} to honeypot IP {self.honeypot_ip}, MAC {self.honeypot_mac} on port {self.honeypot_port}")
         return actions
 
     @set_ev_cls(ofp_event.EventOFPPacketIn, MAIN_DISPATCHER)
@@ -403,63 +454,96 @@ class MyController(app_manager.RyuApp):
                 # Allow ICMP and DNS traffic without additional checks
                 pass
             else:
-                # For HTTP and other traffic, test honeypot redirection
+                # Check if source IP is already known to be suspicious (external1 or attack simulator)
+                # This is a fast path for known bad actors
                 is_suspicious = False
-                
-                # Immediately classify IPs we already know are suspicious
-                if src_ip in self.suspected_ips:
+                if src_ip in self.suspected_ips or src_ip == '10.0.0.9' or src_ip == '10.0.0.11':
                     is_suspicious = True
                     self.logger.warning(f"Known suspicious IP detected: {src_ip}")
-                # Explicitly force external1 (10.0.0.9) and attack simulator (10.0.0.11) to be marked suspicious
-                elif src_ip == '10.0.0.9' or src_ip == '10.0.0.11':
-                    is_suspicious = True
-                    self.suspected_ips.add(src_ip)
-                    self.logger.warning(f"Forcing IP {src_ip} to be marked as suspicious for testing")
+                    if src_ip not in self.suspected_ips:
+                        self.suspected_ips.add(src_ip)
                 else:
-                    # TESTING MODE: Deterministic testing
-                    # Mark specific IP ranges as suspicious or benign for clear testing
-                    last_octet = int(src_ip.split('.')[-1])
+                    # Check basic rule table for suspicious patterns
+                    packet_info = {
+                        'src_ip': src_ip, 
+                        'dst_ip': dst_ip,
+                        'src_port': src_port,
+                        'dst_port': dst_port,
+                        'protocol': protocol_str
+                    }
                     
-                    # Mark hosts 1-3 as suspicious, 4-7 as benign
-                    if 1 <= last_octet <= 3:
+                    rule_result = self.check_rule_table(packet_info)
+                    if rule_result == 'bad':
                         is_suspicious = True
-                        self.logger.warning(f"TESTING-FIXED: Marking traffic from {src_ip} as SUSPICIOUS (IP in suspicious range)")
-                    else:
-                        is_suspicious = False
-                        self.logger.warning(f"TESTING-FIXED: Marking traffic from {src_ip} as benign (IP in benign range)")
+                        self.logger.warning(f"Rule-based detection marked traffic as suspicious: {src_ip}:{src_port} -> {dst_ip}:{dst_port}")
                 
                 # Redirect suspicious traffic to honeypot
                 if is_suspicious:
-                    # Get honeypot port
+                    self.logger.warning(f"REDIRECTING SUSPICIOUS TRAFFIC: {src_ip}:{src_port} -> {dst_ip}:{dst_port} TO HONEYPOT IP {self.honeypot_ip}")
+                    
+                    # Get MAC address of the honeypot from config
+                    honeypot_mac = self.honeypot_mac
+                    honeypot_ip = self.honeypot_ip
                     honeypot_port = self.honeypot_port
                     
-                    self.logger.warning(f"REDIRECTING SUSPICIOUS TRAFFIC: {src_ip}:{src_port} -> {dst_ip}:{dst_port} TO HONEYPOT PORT {honeypot_port}")
+                    # Install specific flow rule for this connection
+                    if tcp_header:
+                        match = parser.OFPMatch(
+                            eth_type=ether_types.ETH_TYPE_IP,
+                            ipv4_src=src_ip,
+                            ip_proto=protocol_num,
+                            tcp_src=src_port,
+                            tcp_dst=dst_port
+                        )
+                    elif udp_header:
+                        match = parser.OFPMatch(
+                            eth_type=ether_types.ETH_TYPE_IP,
+                            ipv4_src=src_ip,
+                            ip_proto=protocol_num,
+                            udp_src=src_port,
+                            udp_dst=dst_port
+                        )
+                    else:
+                        # Generic IP match if not TCP/UDP
+                        match = parser.OFPMatch(
+                            eth_type=ether_types.ETH_TYPE_IP,
+                            ipv4_src=src_ip
+                        )
                     
-                    # Simple direct forwarding action - no packet modification
-                    actions = [parser.OFPActionOutput(honeypot_port)]
+                    # Define actions to modify the packet
+                    actions = [
+                        parser.OFPActionSetField(eth_dst=honeypot_mac),
+                        parser.OFPActionSetField(ipv4_dst=honeypot_ip),
+                        parser.OFPActionOutput(honeypot_port)
+                    ]
                     
-                    # Send packet directly to honeypot port
-                    out = parser.OFPPacketOut(
-                        datapath=datapath,
-                        buffer_id=msg.buffer_id if msg.buffer_id != ofproto.OFP_NO_BUFFER else ofproto.OFP_NO_BUFFER,
-                        in_port=in_port,
-                        actions=actions,
-                        data=msg.data if msg.buffer_id == ofproto.OFP_NO_BUFFER else None
-                    )
+                    # Add flow to direct all traffic from this source to honeypot
+                    self.add_flow(datapath, 100, match, actions, idle_timeout=300)
                     
-                    # Add a simple flow rule for future packets from this source
-                    match = parser.OFPMatch(
+                    # Install a more general flow rule for all traffic from this IP
+                    general_match = parser.OFPMatch(
                         eth_type=ether_types.ETH_TYPE_IP,
-                        ip_proto=protocol_num,
                         ipv4_src=src_ip
                     )
                     
-                    # Add flow to direct all future traffic from this source to honeypot
-                    self.add_flow(datapath, 100, match, actions, idle_timeout=60)  # Short timeout
+                    # Add general flow rule with lower priority
+                    self.add_flow(datapath, 90, general_match, actions, idle_timeout=300)
                     
-                    # Send the packet directly
+                    # Create a copy of the current packet and modify it
+                    eth.dst = honeypot_mac
+                    ip_header.dst = honeypot_ip
+                    
+                    # Send the modified packet to the honeypot
+                    out = parser.OFPPacketOut(
+                        datapath=datapath,
+                        buffer_id=ofproto.OFP_NO_BUFFER,
+                        in_port=in_port,
+                        actions=actions,
+                        data=pkt.serialize()
+                    )
                     datapath.send_msg(out)
-                    self.logger.warning(f"Redirected packet from {src_ip} to honeypot port {honeypot_port}")
+                    
+                    self.logger.warning(f"Redirected packet from {src_ip} to honeypot IP {self.honeypot_ip}, MAC {self.honeypot_mac} on port {honeypot_port}")
                     return
 
         actions = [parser.OFPActionOutput(out_port)]

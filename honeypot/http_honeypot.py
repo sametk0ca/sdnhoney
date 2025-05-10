@@ -43,8 +43,11 @@ class HoneypotHTTPRequestHandler(SimpleHTTPRequestHandler):
     ip_connections = {}
     
     def __init__(self, *args, **kwargs):
-        # Initialize connection tracking for this request
-        client_ip = args[2][0] if len(args) > 2 else "unknown"
+        # Call the parent constructor first to ensure client_address is available
+        super().__init__(*args, **kwargs)
+        
+        # Initialize connection tracking for this request after parent init is done
+        client_ip = self.client_address[0] if hasattr(self, 'client_address') else "unknown"
         if client_ip not in self.ip_connections:
             self.ip_connections[client_ip] = {
                 "first_seen": time.time(),
@@ -52,9 +55,6 @@ class HoneypotHTTPRequestHandler(SimpleHTTPRequestHandler):
                 "request_count": 0,
                 "paths": set()
             }
-        
-        # Call the parent constructor
-        super().__init__(*args, **kwargs)
     
     def log_message(self, format, *args):
         """Override to log all requests to our file"""
@@ -84,6 +84,15 @@ class HoneypotHTTPRequestHandler(SimpleHTTPRequestHandler):
     def track_connection(self):
         """Track connection patterns for this IP"""
         client_ip = self.client_address[0]
+        
+        # Ensure the IP is in our tracking dictionary
+        if client_ip not in self.ip_connections:
+            self.ip_connections[client_ip] = {
+                "first_seen": time.time(),
+                "last_seen": time.time(),
+                "request_count": 0,
+                "paths": set()
+            }
         
         # Update tracking info
         self.ip_connections[client_ip]["last_seen"] = time.time()

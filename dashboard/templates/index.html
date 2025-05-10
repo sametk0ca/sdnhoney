@@ -5,6 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>SDN Honeypot Dashboard</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <!-- Add D3.js for network visualization -->
+    <script src="https://d3js.org/d3.v7.min.js"></script>
 </head>
 <body>
     <h1>SDN Honeypot Dashboard</h1>
@@ -24,10 +26,17 @@
             <h2>MAC Table</h2>
             <pre id="mac-table">Loading...</pre>
         </div>
-
-        <div class="card hosts-card">
-            <h2>Connected Hosts</h2>
-            <div id="host-list" class="host-container">Loading...</div>
+        
+        <!-- Network Topology Visualization Card (now larger) -->
+        <div class="card topology-card">
+            <h2>Network Topology Visualization</h2>
+            <div id="topology-container"></div>
+            <div class="topology-legend">
+                <div class="legend-item"><span class="legend-icon switch-icon"></span> Switch</div>
+                <div class="legend-item"><span class="legend-icon host-icon"></span> Host</div>
+                <div class="legend-item"><span class="legend-icon honeypot-icon"></span> Honeypot</div>
+                <div class="legend-item"><span class="legend-icon external-icon"></span> External</div>
+            </div>
         </div>
 
         <div class="card log-card controller-log-card">
@@ -44,9 +53,6 @@
             <h2>Host8 Honeypot Log (Last 50 Lines)</h2>
             <pre id="host8-honeypot-log">Loading...</pre>
         </div>
-
-        <!-- Add sections for ML Decisions later -->
-
     </div>
 
     <div id="error-message" class="error"></div>
@@ -55,5 +61,6 @@
     <div id="host-tooltip" class="tooltip"></div>
 
     <script src="{{ url_for('static', filename='dashboard.js') }}"></script>
+    <script src="{{ url_for('static', filename='topology.js') }}"></script>
 </body>
 </html> 

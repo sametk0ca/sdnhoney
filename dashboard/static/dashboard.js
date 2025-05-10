@@ -2,12 +2,11 @@ document.addEventListener('DOMContentLoaded', function() {
     const controllerStatusElem = document.getElementById('controller-status');
     const switchListElem = document.getElementById('switch-list');
     const macTableElem = document.getElementById('mac-table');
-    const hostListElem = document.getElementById('host-list');
     const controllerLogElem = document.getElementById('controller-log');
     const mlLogElem = document.getElementById('ml-model-log');
     const host8HoneypotLogElem = document.getElementById('host8-honeypot-log');
     const errorMessageElem = document.getElementById('error-message');
-    const tooltipElem = document.getElementById('host-tooltip'); // Get tooltip element
+    const tooltipElem = document.getElementById('host-tooltip'); // Keep tooltip element for topology
     
     // Add refresh indicator to the page
     const refreshIndicator = document.createElement('div');
@@ -118,72 +117,6 @@ document.addEventListener('DOMContentLoaded', function() {
                     macTableElem.className = '';
                 }
 
-                // Update Host List
-                hostListElem.innerHTML = ''; // Clear existing list
-                if (data.hosts && Object.keys(data.hosts).length > 0) {
-                    for (const [hostName, hostData] of Object.entries(data.hosts)) {
-                        const hostDiv = document.createElement('div');
-                        // Use hostData.status if available, default to 'connected'
-                        const status = hostData.status || 'connected';
-                        hostDiv.classList.add('host', status);
-                        
-                        // Add shutdown class if controller is down
-                        if (controllerShutdown) {
-                            hostDiv.classList.add('shutdown-status');
-                        }
-                        
-                        // Store data directly on the element for tooltip use
-                        hostDiv.dataset.hostname = hostName;
-                        hostDiv.dataset.ip = hostData.ip || 'N/A';
-                        hostDiv.dataset.status = controllerShutdown ? 'unreachable' : status;
-
-                        const iconSpan = document.createElement('span');
-                        iconSpan.classList.add('host-icon');
-                        iconSpan.textContent = '💻';
-
-                        const nameSpan = document.createElement('span');
-                        nameSpan.textContent = hostName;
-
-                        hostDiv.appendChild(iconSpan);
-                        hostDiv.appendChild(nameSpan);
-
-                        // --- Tooltip Event Listeners ---
-                        hostDiv.addEventListener('mouseenter', (event) => {
-                            const target = event.currentTarget;
-                            const name = target.dataset.hostname;
-                            const ip = target.dataset.ip;
-                            const status = target.dataset.status;
-                            // Add more data here later if needed
-                            tooltipElem.innerHTML = `Host: ${name}<br>IP: ${ip}<br>Status: ${status}`;
-                            tooltipElem.style.display = 'block';
-                            // Position tooltip near mouse - adjust offsets as needed
-                            tooltipElem.style.left = `${event.pageX + 15}px`;
-                            tooltipElem.style.top = `${event.pageY + 10}px`;
-                        });
-
-                        hostDiv.addEventListener('mouseleave', () => {
-                            tooltipElem.style.display = 'none';
-                        });
-                         // Optional: Update position on mouse move within element
-                         hostDiv.addEventListener('mousemove', (event) => {
-                             if (tooltipElem.style.display === 'block') {
-                                 tooltipElem.style.left = `${event.pageX + 15}px`;
-                                 tooltipElem.style.top = `${event.pageY + 10}px`;
-                             }
-                         });
-                        // --- End Tooltip Listeners ---
-
-                        hostListElem.appendChild(hostDiv);
-                    }
-                } else if (controllerShutdown) {
-                    const noHostDiv = document.createElement('div');
-                    noHostDiv.textContent = 'Host data unavailable - Controller is down';
-                    noHostDiv.className = 'shutdown-status';
-                    hostListElem.appendChild(noHostDiv);
-                } else {
-                    hostListElem.textContent = 'No host data available.';
-                }
-
                 // Update Controller Log
                 if (data.logs && data.logs.length > 0) {
                     controllerLogElem.textContent = data.logs.join('\n');
@@ -250,10 +183,6 @@ document.addEventListener('DOMContentLoaded', function() {
                     if (!macTableElem.textContent.includes('down')) {
                         macTableElem.textContent = 'MAC table data unavailable - Controller is down';
                         macTableElem.className = 'shutdown-status';
-                    }
-                    
-                    if (!hostListElem.innerHTML.includes('down')) {
-                        hostListElem.innerHTML = '<div class="shutdown-status">Host data unavailable - Controller is down</div>';
                     }
                 }
 
