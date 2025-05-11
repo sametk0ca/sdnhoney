@@ -38,7 +38,7 @@ h1 {
     display: grid;
     grid-template-columns: 1fr 2fr; /* Left column for status/switches, right column for MAC table */
     grid-template-rows: auto auto auto auto auto; /* Status, switches, topology, logs, honeypot logs */
-    gap: 15px; /* Smaller overall gap */
+    gap: 20px; /* Slightly increased gap */
     column-gap: 20px; /* Reduce horizontal gap between columns */
     max-width: 1600px; /* Keep reasonable max width */
     margin: 20px auto;
@@ -90,26 +90,36 @@ h1 {
 .topology-card {
     grid-column: 1 / 3; /* Full width */
     grid-row: 3 / 4;    /* Row 3 - Topology (moved up) */
-    height: 600px;      /* Increased height */
+    height: 750px;      /* Increased height from 600px to 750px */
     position: relative; /* For absolute positioning of the refresh button */
 }
 
 .controller-log-card {
     grid-column: 2 / 3; /* Right column */
     grid-row: 4 / 5;    /* Row 4 - Logs (moved up) */
-    height: 300px;     /* Taller for logs */
+    height: 320px;     /* Increased height for logs */
 }
 
 .ml-log-card {
     grid-column: 1 / 2; /* Left column */
     grid-row: 4 / 5;    /* Row 4 - Logs (moved up) */
-    height: 300px;     /* Taller for logs */
+    height: 320px;     /* Increased height for logs */
 }
 
-.host8-honeypot-log-card {
-    grid-column: 1 / 3; /* Full width in a new row */
-    grid-row: 5 / 6;    /* Row 5 - Honeypot logs (moved up) */
-    height: 300px;     /* Same height as other logs */
+.host15-honeypot-log-card {
+    grid-column: 1 / 3; /* Full width across both columns */
+    grid-row: 5 / 6;    /* Row 5 - Honeypot logs */
+    height: 320px;     /* Maintain the height */
+    width: 100%;       /* Ensure full width */
+    max-width: 100%;   /* Prevent overflow */
+    border: 2px solid var(--honeypot-color); /* Add a border with honeypot color */
+    background-color: #1a1a1a; /* Slightly darker background than other log cards */
+}
+
+.host15-honeypot-log-card h2 {
+    color: var(--honeypot-color); /* Use honeypot color for the header */
+    font-weight: 600;
+    border-bottom-color: var(--honeypot-color);
 }
 
 /* Log Card Base Style */
@@ -228,7 +238,7 @@ pre {
 }
 
 /* Special styling for honeypot host */
-.host[data-hostname="h8"] .host-icon {
+.host[data-hostname="h15"] .host-icon {
     color: var(--honeypot-color);
 }
 
@@ -278,7 +288,7 @@ pre {
 /* Topology visualization styles */
 #topology-container {
     width: 100%;
-    height: 90%;
+    height: 95%;       /* Increased height from 90% to 95% */
     background-color: #f8f9fa;
     border-radius: 5px;
     overflow: hidden;
@@ -351,12 +361,13 @@ pre {
     stroke: #999;
     stroke-opacity: 0.6;
     stroke-width: 2px;
+    transition: stroke 0.3s ease, stroke-opacity 0.3s ease, stroke-width 0.3s ease;
 }
 
 .link.active {
     stroke: var(--primary-color);
-    stroke-opacity: 1;
-    stroke-width: 3px;
+    stroke-opacity: 0.8;
+    stroke-width: 2.5px;
     animation: pulse-link 2s infinite;
 }
 
@@ -386,25 +397,47 @@ pre {
 /* Topology refresh button */
 .topology-refresh-btn {
     position: absolute;
-    top: 15px;
-    right: 15px;
+    top: 10px;
+    right: 10px;
     background-color: var(--primary-color);
     color: white;
     border: none;
-    border-radius: 4px;
-    padding: 6px 12px;
+    border-radius: 5px;
+    padding: 8px 12px;
     font-size: 0.9em;
     cursor: pointer;
-    transition: background-color 0.2s ease;
+    transition: all 0.2s ease;
     z-index: 10;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
 }
 
-.topology-refresh-btn:hover {
+.topology-button {
+    position: absolute;
+    top: 10px;
+    right: 140px;
+    background-color: var(--primary-color);
+    color: white;
+    border: none;
+    border-radius: 5px;
+    padding: 8px 12px;
+    font-size: 0.9em;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    z-index: 10;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.topology-refresh-btn:hover,
+.topology-button:hover {
     background-color: #0069d9;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
 }
 
-.topology-refresh-btn:active {
-    background-color: #0062cc;
+.topology-refresh-btn:active,
+.topology-button:active {
+    transform: translateY(0);
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
 }
 
 /* Topology status text */
@@ -481,4 +514,82 @@ pre {
 
 .external-indicator {
     fill: var(--external-color);
+}
+
+/* Make honeypot log pre tag scrollable horizontally when needed */
+#host15-honeypot-log {
+    max-height: 260px; /* Same as other logs */
+    overflow-y: auto;  /* Vertical scrolling */
+    overflow-x: auto;  /* Horizontal scrolling when needed */
+    padding: 10px;
+    font-family: monospace;
+    white-space: pre-wrap; /* Maintain line breaks but wrap if needed */
+    word-break: break-all; /* Ensure long words break to prevent layout issues */
+    color: #ffffff; /* Brighter text for better contrast */
+    font-size: 0.9em; /* Slightly larger font */
+    line-height: 1.4; /* Better line spacing */
+}
+
+/* Highlight honeypot attack entries */
+#host15-honeypot-log::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+}
+
+#host15-honeypot-log::-webkit-scrollbar-track {
+    background: #333333;
+}
+
+#host15-honeypot-log::-webkit-scrollbar-thumb {
+    background-color: var(--honeypot-color);
+    border-radius: 4px;
+}
+
+/* Add styles for the enhanced tooltip */
+.node:hover {
+    cursor: pointer;
+}
+
+#host-tooltip {
+    position: absolute;
+    padding: 10px;
+    background-color: rgba(0, 0, 0, 0.8);
+    color: white;
+    border-radius: 5px;
+    font-size: 14px;
+    max-width: 300px;
+    z-index: 1000;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.2s;
+}
+
+#host-tooltip.visible {
+    opacity: 1;
+}
+
+.tooltip-title {
+    font-weight: bold;
+    margin-bottom: 5px;
+    border-bottom: 1px solid #555;
+    padding-bottom: 5px;
+}
+
+.tooltip-mac {
+    font-family: monospace;
+    padding: 4px;
+    background-color: #333;
+    border-radius: 3px;
+    margin-top: 3px;
+    display: inline-block;
+}
+
+.tooltip-field {
+    margin-top: 3px;
+}
+
+.tooltip-special {
+    margin-top: 5px;
+    font-weight: bold;
+    color: #ffcc00;
 } 

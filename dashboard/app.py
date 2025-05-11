@@ -55,7 +55,7 @@ def get_data():
         'hosts': {},
         'logs': [],
         'ml_logs': [],
-        'host8_honeypot_logs': [],
+        'host15_honeypot_logs': [],
         'error': None
     }
     
@@ -71,8 +71,8 @@ def get_data():
             data['logs'] = controller_status['last_logs']
             # Add shutdown message to logs
             data['logs'].append("*** CONTROLLER SHUTDOWN DETECTED ***")
-        # Add placeholder for host8 logs on shutdown?
-        data['host8_honeypot_logs'] = ["*** CONTROLLER SHUTDOWN - Host8 logs unavailable ***"]
+        # Add placeholder for host15 logs on shutdown?
+        data['host15_honeypot_logs'] = ["*** CONTROLLER SHUTDOWN - Host15 logs unavailable ***"]
         return jsonify(data)
         
     try:
@@ -120,11 +120,11 @@ def get_data():
         ml_logs_resp.raise_for_status()
         data['ml_logs'] = ml_logs_resp.json().get('ml_logs', [])
 
-        # Fetch Host8 Honeypot Logs
-        host8_logs_resp = requests.get(f'{RYU_API_URL}/api/host8_honeypot_logs', 
+        # Fetch Host15 Honeypot Logs
+        host15_logs_resp = requests.get(f'{RYU_API_URL}/api/host15_honeypot_logs', 
                                      timeout=2, params={'_': int(time.time() * 1000)})
-        host8_logs_resp.raise_for_status()
-        data['host8_honeypot_logs'] = host8_logs_resp.json().get('host8_honeypot_logs', [])
+        host15_logs_resp.raise_for_status()
+        data['host15_honeypot_logs'] = host15_logs_resp.json().get('host15_honeypot_logs', [])
 
     except (ConnectionError, Timeout) as e:
         logger.warning(f"Connection error to Ryu API: {e}")
@@ -132,15 +132,15 @@ def get_data():
         # If connection fails, still try to return last known controller logs
         if controller_status['last_logs']:
              data['logs'] = controller_status['last_logs']
-        data['host8_honeypot_logs'] = ["*** ERROR: Cannot connect to controller to fetch Host8 logs ***"]
+        data['host15_honeypot_logs'] = ["*** ERROR: Cannot connect to controller to fetch Host15 logs ***"]
     except requests.exceptions.RequestException as e:
         logger.error(f"Error fetching data from Ryu API: {e}")
         data['error'] = str(e)
-        data['host8_honeypot_logs'] = [f"*** ERROR: Failed to fetch Host8 logs: {e} ***"]
+        data['host15_honeypot_logs'] = [f"*** ERROR: Failed to fetch Host15 logs: {e} ***"]
     except Exception as e:
         logger.error(f"An unexpected error occurred: {e}")
         data['error'] = 'An unexpected error occurred.'
-        data['host8_honeypot_logs'] = ["*** UNEXPECTED ERROR fetching Host8 logs ***"]
+        data['host15_honeypot_logs'] = ["*** UNEXPECTED ERROR fetching Host15 logs ***"]
 
     return jsonify(data)
 

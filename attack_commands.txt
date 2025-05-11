@@ -1,7 +1,0 @@
-external1 wget -O - http://10.0.0.1:8080/ 
-external1 wget -O - "http://10.0.0.1:8080/login.php?id=1%27%20OR%201=1--"
-external1 wget -O - "http://10.0.0.2:8080/../../../../etc/passwd"
-external1 wget -O - "http://10.0.0.3:8080/?user=<script>alert(1)</script>"
-external1 curl -X PUT http://10.0.0.4:8080/
-external1 wget -O - http://10.0.0.5:8080/
-external1 cat /home/samet/Desktop/sdnhoney/logs/host8_honeypot.log 

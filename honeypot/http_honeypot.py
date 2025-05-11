@@ -16,7 +16,7 @@ logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(levelname)s - %(message)s',
     handlers=[
-        logging.FileHandler(os.path.join(log_dir, "host8_honeypot.log")),
+        logging.FileHandler(os.path.join(log_dir, "host15_honeypot.log")),
         logging.StreamHandler(sys.stdout)
     ]
 )
@@ -372,7 +372,7 @@ if __name__ == '__main__':
     # Create logs directory if it doesn't exist
     os.makedirs(log_dir, exist_ok=True)
     
-    print("Starting HTTP honeypot (h8)")
+    print("Starting HTTP honeypot (h15)")
     logger.warning("HONEYPOT STARTING")
     try:
         run()

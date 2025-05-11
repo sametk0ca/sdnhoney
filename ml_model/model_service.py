@@ -8,6 +8,11 @@ import pandas as pd
 from sklearn.ensemble import RandomForestClassifier
 import time
 import threading
+import warnings
+
+# Suppress the warning about feature names
+warnings.filterwarnings("ignore", category=FutureWarning, 
+                        message="The feature names should match those that were passed during fit")
 
 # Add project root to path to find 'proto' module
 import sys

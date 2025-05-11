@@ -4,7 +4,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const macTableElem = document.getElementById('mac-table');
     const controllerLogElem = document.getElementById('controller-log');
     const mlLogElem = document.getElementById('ml-model-log');
-    const host8HoneypotLogElem = document.getElementById('host8-honeypot-log');
+    const host15HoneypotLogElem = document.getElementById('host15-honeypot-log');
     const errorMessageElem = document.getElementById('error-message');
     const tooltipElem = document.getElementById('host-tooltip'); // Keep tooltip element for topology
     
@@ -139,19 +139,19 @@ document.addEventListener('DOMContentLoaded', function() {
                     }
                 }
 
-                // Update Host8 Honeypot Log
-                if (host8HoneypotLogElem) {
-                    if (data.host8_honeypot_logs && data.host8_honeypot_logs.length > 0) {
-                        host8HoneypotLogElem.textContent = data.host8_honeypot_logs.join('\n');
-                        host8HoneypotLogElem.scrollTop = host8HoneypotLogElem.scrollHeight;
+                // Update Host15 Honeypot Log
+                if (host15HoneypotLogElem) {
+                    if (data.host15_honeypot_logs && data.host15_honeypot_logs.length > 0) {
+                        host15HoneypotLogElem.textContent = data.host15_honeypot_logs.join('\n');
+                        host15HoneypotLogElem.scrollTop = host15HoneypotLogElem.scrollHeight;
                     } else if (controllerShutdown) {
                          // Preserve existing logs if controller is down and we have some
-                         if (!host8HoneypotLogElem.textContent) {
-                             host8HoneypotLogElem.textContent = 'Host8 Honeypot logs unavailable (controller down).';
+                         if (!host15HoneypotLogElem.textContent) {
+                             host15HoneypotLogElem.textContent = 'Host15 Honeypot logs unavailable (controller down).';
                          } 
                     } else {
                         // Handle case where logs might be empty even if controller is up
-                        host8HoneypotLogElem.textContent = 'No Host8 Honeypot log entries found.';
+                        host15HoneypotLogElem.textContent = 'No Host15 Honeypot log entries found.';
                     }
                 }
             })
@@ -186,12 +186,12 @@ document.addEventListener('DOMContentLoaded', function() {
                     }
                 }
 
-                // Update Host8 Honeypot log display on error
-                if (host8HoneypotLogElem) {
-                    if (!host8HoneypotLogElem.textContent.includes('*** ERROR')) {
+                // Update Host15 Honeypot log display on error
+                if (host15HoneypotLogElem) {
+                    if (!host15HoneypotLogElem.textContent.includes('*** ERROR')) {
                          // Append error only if not already showing one to avoid repetition
-                         host8HoneypotLogElem.textContent += `\n*** Error fetching Host8 logs: ${error.message} ***`;
-                         host8HoneypotLogElem.scrollTop = host8HoneypotLogElem.scrollHeight;
+                         host15HoneypotLogElem.textContent += `\n*** Error fetching Host15 logs: ${error.message} ***`;
+                         host15HoneypotLogElem.scrollTop = host15HoneypotLogElem.scrollHeight;
                     }
                 }
             });

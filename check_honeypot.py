@@ -19,7 +19,7 @@ logger = logging.getLogger(__name__)
 # Define paths
 PROJECT_ROOT = os.path.dirname(os.path.abspath(__file__))
 LOGS_DIR = os.path.join(PROJECT_ROOT, 'logs')
-HONEYPOT_LOG = os.path.join(LOGS_DIR, 'host8_honeypot.log')
+HONEYPOT_LOG = os.path.join(LOGS_DIR, 'host15_honeypot.log')
 CONTROLLER_LOG = os.path.join(LOGS_DIR, 'controller.log')
 
 def ensure_logs_directory():
@@ -90,31 +90,24 @@ def check_controller_redirection():
         return False
 
 def find_honeypot_log():
-    """Try to find honeypot log file as it might have a different name"""
-    # Try common honeypot log patterns
+    """Find the honeypot log file"""
+    # First check if the log file exists in the expected location
+    if os.path.exists(HONEYPOT_LOG):
+        return HONEYPOT_LOG
+    
+    # Try to find it in the logs directory
     potential_logs = [
-        os.path.join(LOGS_DIR, 'host8_honeypot.log'),
-        os.path.join(LOGS_DIR, 'honeypot.log'),
-        os.path.join(PROJECT_ROOT, 'honeypot', 'log', 'glastopf.log'),
-        os.path.join(PROJECT_ROOT, 'honeypot', 'honeypot.log')
+        os.path.join(LOGS_DIR, 'host15_honeypot.log'),
+        os.path.join(PROJECT_ROOT, 'honeypot', 'log', 'honeypot.log'),
+        os.path.join(PROJECT_ROOT, 'honeypot', 'log.txt')
     ]
     
     for log_path in potential_logs:
         if os.path.exists(log_path):
             logger.info(f"Found honeypot log at {log_path}")
             return log_path
-    
-    # If none of the expected paths work, try to find any log file in the honeypot directory
-    honeypot_dir = os.path.join(PROJECT_ROOT, 'honeypot')
-    if os.path.exists(honeypot_dir):
-        for root, dirs, files in os.walk(honeypot_dir):
-            for file in files:
-                if file.endswith('.log'):
-                    log_path = os.path.join(root, file)
-                    logger.info(f"Found potential honeypot log at {log_path}")
-                    return log_path
-    
-    logger.error("Could not find honeypot log file")
+            
+    logger.warning("Could not find honeypot log file")
     return None
 
 def check_honeypot_traffic_reception():
@@ -180,9 +173,9 @@ def main():
         )
         if "mininet-cli" in result.stdout:
             logger.info("Mininet CLI is running. You can manually test with commands like:")
-            logger.info("  - external1 ping h8")
-            logger.info("  - external1 python3 test_attack.py h8")
-            logger.info("  - h8 tail -f /tmp/honeypot.log (or whatever log path is being used)")
+            logger.info("  - external1 ping h15")
+            logger.info("  - external1 python3 simple_attack.py --target h15")
+            logger.info("  - h15 tail -f logs/host15_honeypot.log")
     except Exception as e:
         logger.error(f"Error checking Mininet status: {e}")
 

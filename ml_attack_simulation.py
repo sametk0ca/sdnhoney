@@ -19,8 +19,11 @@ These attacks are designed to:
 4. Create unusual protocol behaviors
 """
 
-# Target hosts in our network
-HOSTS = ['10.0.0.1', '10.0.0.2', '10.0.0.3', '10.0.0.4', '10.0.0.5', '10.0.0.6', '10.0.0.7']
+# Target hosts in our network (large topology)
+HOSTS = ['10.0.0.1', '10.0.0.2', '10.0.0.3', '10.0.0.4', '10.0.0.5', '10.0.0.6', 
+         '10.0.0.7', '10.0.0.8', '10.0.0.9', '10.0.0.10', '10.0.0.11', '10.0.0.12',
+         '10.0.0.13', '10.0.0.14']
+HONEYPOT_IP = '10.0.0.15'  # Honeypot is h15 in large topology
 HTTP_PORT = 8080
 
 def scan_ports(target_ip, port_range):
@@ -265,38 +268,49 @@ def main():
     parser.add_argument('--slow', action='store_true', help='Perform low and slow attack')
     parser.add_argument('--structured', action='store_true', help='Perform structured multi-stage attack')
     parser.add_argument('--all', action='store_true', help='Perform all attack types')
+    parser.add_argument('--target', default=None, help='Specify a target IP (defaults to random selection)')
     
     args = parser.parse_args()
     
     # Default to structured attack if no args specified
-    if not any(vars(args).values()):
+    if not any([args.scan, args.dos, args.hopping, args.tcp_to_udp, args.udp_to_tcp, args.slow, args.structured, args.all]):
         args.structured = True
     
+    # Use specified target if provided, otherwise random selection
+    if args.target:
+        target_host = args.target
+        print(f"Using specified target: {target_host}")
+    else:
+        print(f"Available hosts: {HOSTS}")
+    
     if args.scan or args.all:
-        target = random.choice(HOSTS)
+        target = args.target if args.target else random.choice(HOSTS)
         scan_ports(target, (8000, 8100))
     
     if args.dos or args.all:
-        target = random.choice(HOSTS)
+        target = args.target if args.target else random.choice(HOSTS)
         perform_http_dos(target)
     
     if args.hopping or args.all:
         perform_port_hopping(HOSTS)
     
     if args.tcp_to_udp or args.all:
-        target = random.choice(HOSTS)
+        target = args.target if args.target else random.choice(HOSTS)
         send_tcp_to_udp_port(target)
     
     if args.udp_to_tcp or args.all:
-        target = random.choice(HOSTS)
+        target = args.target if args.target else random.choice(HOSTS)
         send_udp_to_tcp_port(target)
     
     if args.slow or args.all:
-        target = random.choice(HOSTS)
+        target = args.target if args.target else random.choice(HOSTS)
         low_and_slow_attack(target)
     
     if args.structured or args.all:
-        simulate_structured_attack(HOSTS)
+        if args.target:
+            simulate_structured_attack([args.target])
+        else:
+            simulate_structured_attack(HOSTS)
     
     print("[+] Attack simulation completed")
 
