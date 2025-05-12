@@ -56,6 +56,7 @@ class LargeTopo(Topo):
         s12 = self.addSwitch('s12')  # Edge switch 6
         s13 = self.addSwitch('s13')  # Edge switch 7
         s14 = self.addSwitch('s14')  # Edge switch 8
+        s15 = self.addSwitch('s15')  # New switch for h16
 
         # Regular hosts with HTTP servers (h1-h14)
         http_server_cmd = f'mkdir -p {LOGS_DIR} && cd {PROJECT_ROOT} && python3 server/real_web_server.py > {LOGS_DIR}/web_server_{{0}}.log 2>&1 &'
@@ -79,6 +80,9 @@ class LargeTopo(Topo):
             ip = f"10.0.0.{external_start_ip + i - 1}/24"
             external = self.addHost(f'external{i}', ip=ip)
             external_hosts.append(external)
+
+        # Hard honeypot host (h16)
+        h16 = self.addHost('h16', ip='10.0.0.16/24')
 
         # Core to Aggregation connections (Level 1 to Level 2)
         self.addLink(s1, s3)
@@ -105,11 +109,16 @@ class LargeTopo(Topo):
             
         # Connect honeypot to its switch
         self.addLink(h15, s14)  # Honeypot connected to s14
+        self.addLink(h16, s15)  # Hard honeypot connected to s15
 
         # External hosts connections to core switches
         for i, external in enumerate(external_hosts):
             switch = s1 if i < 2 else s2  # first 2 to s1, rest to s2
             self.addLink(external, switch)
+
+        # Optionally, connect s14 and s15 to the core network (e.g., s6/s7)
+        self.addLink(s14, s6)
+        self.addLink(s15, s6)
 
 def run():
     # Create topology with linear MAC addresses

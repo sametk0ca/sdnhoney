@@ -7,6 +7,9 @@ document.addEventListener('DOMContentLoaded', function() {
     const host15HoneypotLogElem = document.getElementById('host15-honeypot-log');
     const errorMessageElem = document.getElementById('error-message');
     const tooltipElem = document.getElementById('host-tooltip'); // Keep tooltip element for topology
+    const hostStateTableElem = document.getElementById('host-state-table');
+    const honeypotInfoElem = document.getElementById('honeypot-info');
+    const host16HoneypotLogElem = document.getElementById('host16-honeypot-log');
     
     // Add refresh indicator to the page
     const refreshIndicator = document.createElement('div');
@@ -152,6 +155,32 @@ document.addEventListener('DOMContentLoaded', function() {
                     } else {
                         // Handle case where logs might be empty even if controller is up
                         host15HoneypotLogElem.textContent = 'No Host15 Honeypot log entries found.';
+                    }
+                }
+
+                // Update Host State Table
+                if (hostStateTableElem) {
+                    if (data.host_states && Object.keys(data.host_states).length > 0) {
+                        hostStateTableElem.textContent = JSON.stringify(data.host_states, null, 2);
+                    } else {
+                        hostStateTableElem.textContent = 'No host state data.';
+                    }
+                }
+                // Update Honeypot Info
+                if (honeypotInfoElem) {
+                    if (data.honeypots && Object.keys(data.honeypots).length > 0) {
+                        honeypotInfoElem.textContent = JSON.stringify(data.honeypots, null, 2);
+                    } else {
+                        honeypotInfoElem.textContent = 'No honeypot info.';
+                    }
+                }
+                // Update Host16 Honeypot Log
+                if (host16HoneypotLogElem) {
+                    if (data.host16_honeypot_logs && data.host16_honeypot_logs.length > 0) {
+                        host16HoneypotLogElem.textContent = data.host16_honeypot_logs.join('\n');
+                        host16HoneypotLogElem.scrollTop = host16HoneypotLogElem.scrollHeight;
+                    } else {
+                        host16HoneypotLogElem.textContent = 'No Host16 Honeypot log entries found.';
                     }
                 }
             })

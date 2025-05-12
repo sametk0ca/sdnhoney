@@ -56,6 +56,9 @@ def get_data():
         'logs': [],
         'ml_logs': [],
         'host15_honeypot_logs': [],
+        'host16_honeypot_logs': [],
+        'host_states': {},
+        'honeypots': {},
         'error': None
     }
     
@@ -125,6 +128,19 @@ def get_data():
                                      timeout=2, params={'_': int(time.time() * 1000)})
         host15_logs_resp.raise_for_status()
         data['host15_honeypot_logs'] = host15_logs_resp.json().get('host15_honeypot_logs', [])
+
+        # Fetch Host States
+        host_states_resp = requests.get(f'{RYU_API_URL}/api/host_states', timeout=2, params=cache_buster)
+        host_states_resp.raise_for_status()
+        data['host_states'] = host_states_resp.json()
+        # Fetch Honeypots Info
+        honeypots_resp = requests.get(f'{RYU_API_URL}/api/honeypots', timeout=2, params=cache_buster)
+        honeypots_resp.raise_for_status()
+        data['honeypots'] = honeypots_resp.json()
+        # Fetch Host16 Honeypot Logs
+        host16_logs_resp = requests.get(f'{RYU_API_URL}/api/host16_honeypot_logs', timeout=2, params={'_': int(time.time() * 1000)})
+        host16_logs_resp.raise_for_status()
+        data['host16_honeypot_logs'] = host16_logs_resp.json().get('host16_honeypot_logs', [])
 
     except (ConnectionError, Timeout) as e:
         logger.warning(f"Connection error to Ryu API: {e}")
