@@ -3,77 +3,127 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SDN Honeypot Dashboard</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
-    <!-- Add D3.js for network visualization -->
-    <script src="https://d3js.org/d3.v7.min.js"></script>
+    <title>Mininet Topology Visualization</title>
+    <script src="https://d3js.org/d3.v6.min.js"></script>
+    <style>
+        .node circle {
+            fill: #fff;
+            stroke-width: 3px;
+        }
+
+        .switch {
+            fill: green;
+        }
+
+        .host {
+            fill: blue;
+        }
+
+        .link {
+            fill: none;
+            stroke: #ccc;
+            stroke-width: 2px;
+        }
+
+        text {
+            font: 10px sans-serif;
+            pointer-events: none;
+            fill: white;
+        }
+    </style>
 </head>
 <body>
-    <h1>SDN Honeypot Dashboard</h1>
+    <h1>Mininet Topology Visualization</h1>
+    <svg width="960" height="600"></svg>
+    <script>
+        const data = {
+            nodes: [
+                { id: 's1', type: 'switch' }, { id: 's21', type: 'switch' }, { id: 's22', type: 'switch' },
+                { id: 's31', type: 'switch' }, { id: 's32', type: 'switch' }, { id: 's33', type: 'switch' }, { id: 's34', type: 'switch' },
+                { id: 'h1', type: 'host' }, { id: 'h2', type: 'host' }, { id: 'h3', type: 'host' }, { id: 'h4', type: 'host' },
+                { id: 'h5', type: 'host' }, { id: 'h6', type: 'host' }, { id: 'h7', type: 'host' }, { id: 'h8', type: 'host' },
+                { id: 'h9', type: 'host' }, { id: 'h10', type: 'host' }
+            ],
+            links: [
+                { source: 's1', target: 's21' }, { source: 's1', target: 's22' },
+                { source: 's21', target: 's31' }, { source: 's21', target: 's32' },
+                { source: 's22', target: 's33' }, { source: 's22', target: 's34' },
+                { source: 's31', target: 'h1' }, { source: 's31', target: 'h5' }, { source: 's31', target: 'h9' },
+                { source: 's32', target: 'h2' }, { source: 's32', target: 'h6' }, { source: 's32', target: 'h10' },
+                { source: 's33', target: 'h3' }, { source: 's33', target: 'h7' },
+                { source: 's34', target: 'h4' }, { source: 's34', target: 'h8' }
+            ]
+        };
 
-    <div class="dashboard-container">
-        <div class="card status-card">
-            <h2>Controller Status</h2>
-            <p id="controller-status">Loading...</p>
-        </div>
+        const svg = d3.select("svg"),
+            width = +svg.attr("width"),
+            height = +svg.attr("height");
 
-        <div class="card switches-card">
-            <h2>Connected Switches (DPIDs)</h2>
-            <ul id="switch-list"><li>Loading...</li></ul>
-        </div>
+        const simulation = d3.forceSimulation(data.nodes)
+            .force("link", d3.forceLink(data.links).id(d => d.id))
+            .force("charge", d3.forceManyBody().strength(-400))
+            .force("center", d3.forceCenter(width / 2, height / 2));
 
-        <div class="card mac-table-card">
-            <h2>MAC Table</h2>
-            <pre id="mac-table">Loading...</pre>
-        </div>
-        
-        <!-- Network Topology Visualization Card (now larger) -->
-        <div class="card topology-card">
-            <h2>Network Topology Visualization</h2>
-            <div id="topology-container"></div>
-            <div class="topology-legend">
-                <div class="legend-item"><span class="legend-icon switch-icon"></span> Switch</div>
-                <div class="legend-item"><span class="legend-icon host-icon"></span> Host</div>
-                <div class="legend-item"><span class="legend-icon honeypot-icon"></span> Honeypot</div>
-                <div class="legend-item"><span class="legend-icon external-icon"></span> External</div>
-            </div>
-        </div>
+        const link = svg.append("g")
+            .attr("class", "links")
+            .selectAll("line")
+            .data(data.links)
+            .enter().append("line")
+            .attr("class", "link");
 
-        <div class="card log-card controller-log-card">
-            <h2>Controller Log (Last 20 Lines)</h2>
-            <pre id="controller-log">Loading...</pre>
-        </div>
+        const node = svg.append("g")
+            .attr("class", "nodes")
+            .selectAll("circle")
+            .data(data.nodes)
+            .enter().append("circle")
+            .attr("r", 12)
+            .attr("class", d => d.type)
+            .call(d3.drag()
+                .on("start", dragstarted)
+                .on("drag", dragged)
+                .on("end", dragended));
 
-        <div class="card log-card ml-log-card">
-            <h2>ML Model Log (Last 20 Lines)</h2>
-            <pre id="ml-model-log">Loading...</pre>
-        </div>
-        
-        <div class="card log-card host15-honeypot-log-card">
-            <h2>Host15 Honeypot Log (Last 50 Lines)</h2>
-            <pre id="host15-honeypot-log">Loading...</pre>
-        </div>
+        const labels = svg.append("g")
+            .attr("class", "labels")
+            .selectAll("text")
+            .data(data.nodes)
+            .enter().append("text")
+            .attr("dy", 3)
+            .attr("text-anchor", "middle")
+            .text(d => d.id);
 
-        <div class="card host-state-card">
-            <h2>Source IP States (Triage/Hard/Normal)</h2>
-            <pre id="host-state-table">Loading...</pre>
-        </div>
-        <div class="card honeypot-info-card">
-            <h2>Honeypot Info</h2>
-            <pre id="honeypot-info">Loading...</pre>
-        </div>
-        <div class="card log-card host16-honeypot-log-card">
-            <h2>Host16 Honeypot Log (Last 50 Lines)</h2>
-            <pre id="host16-honeypot-log">Loading...</pre>
-        </div>
-    </div>
+        simulation.on("tick", () => {
+            link
+                .attr("x1", d => d.source.x)
+                .attr("y1", d => d.source.y)
+                .attr("x2", d => d.target.x)
+                .attr("y2", d => d.target.y);
 
-    <div id="error-message" class="error"></div>
+            node
+                .attr("cx", d => d.x)
+                .attr("cy", d => d.y);
 
-    <!-- Tooltip Element (Initially Hidden) -->
-    <div id="host-tooltip" class="tooltip"></div>
+            labels
+                .attr("x", d => d.x)
+                .attr("y", d => d.y);
+        });
 
-    <script src="{{ url_for('static', filename='dashboard.js') }}"></script>
-    <script src="{{ url_for('static', filename='topology.js') }}"></script>
+        function dragstarted(event, d) {
+            if (!event.active) simulation.alphaTarget(0.3).restart();
+            d.fx = d.x;
+            d.fy = d.y;
+        }
+
+        function dragged(event, d) {
+            d.fx = event.x;
+            d.fy = event.y;
+        }
+
+        function dragended(event, d) {
+            if (!event.active) simulation.alphaTarget(0);
+            d.fx = null;
+            d.fy = null;
+        }
+    </script>
 </body>
 </html> 

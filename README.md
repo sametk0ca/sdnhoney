@@ -1,116 +1,145 @@
-# SDN-based Honeypot System
+# SDN Honeypot Security System
 
-This project implements an intelligent SDN-based honeypot system that uses machine learning to detect malicious traffic and redirect it to a honeypot for further analysis.
+This project implements a Software Defined Networking (SDN) environment with integrated honeypot systems and machine learning to detect and analyze suspicious traffic.
 
-## System Architecture
+## Project Overview
 
-The system consists of several components:
+The system creates a Mininet network with multiple hosts and a domain endpoint (smtkoca.com). At the controller level, it detects potentially malicious traffic and redirects it through a triage process using honeypots and machine learning.
 
-1. **SDN Controller**: A Ryu-based controller that makes decisions about packet routing based on ML model predictions
-2. **Machine Learning Service**: Analyzes packet data to predict if traffic is malicious
-3. **HTTP Honeypot**: A custom HTTP honeypot that simulates vulnerable web applications
-4. **Mininet Network**: Provides the virtualized network infrastructure
-5. **Dashboard**: Web-based dashboard for monitoring system activity
+### Key Features
 
-## Requirements
-
-- Python 3.7 or newer
-- Mininet
-- Open vSwitch
-- Ryu SDN Controller
-
-## Installation
-
-Clone the repository and set up the required dependencies:
-
-```bash
-# Install system dependencies
-sudo apt update
-sudo apt install -y mininet python3-pip openvswitch-switch
-
-# Create and activate a virtual environment
-python3 -m venv venv
-source venv/bin/activate
-
-# Install Python dependencies
-pip install -r requirements.txt
-```
+- Tree topology network with depth = 3
+- Ryu SDN controller with traffic classification and redirection
+- Normal web servers with login panels
+- Triage and Deep honeypots for detecting suspicious traffic
+- Machine learning model to classify traffic as normal or malicious
+- Monitoring dashboard with network visualization
 
 ## Project Structure
 
 ```
-sdnhoney/
-├── controller/            # SDN controller code
-│   ├── my_controller.py   # Main controller logic
-│   └── flow_rules.py      # Flow rule definitions
-├── ml_model/              # Machine learning model and service
-│   ├── model_service.py   # gRPC service for ML predictions
-│   ├── train_model.py     # Model training script
-│   └── generate_dataset.py # Dataset generation tool
-├── honeypot/              # Honeypot configuration and services
-│   └── http_honeypot.py   # Simple HTTP honeypot implementation
-├── dashboard/             # Web-based monitoring dashboard
-│   ├── app.py             # Flask-based dashboard backend
-│   └── templates/         # Dashboard HTML templates
-├── proto/                 # Protocol buffer definitions for gRPC
-├── topology/              # Mininet topology definition
-│   └── large_topo.py      # Network topology setup
-├── server/                # Web server implementations
-│   └── real_web_server.py # Actual web server for testing
-├── logs/                  # System logs directory
-├── start.sh               # Main startup script
-├── ml_attack_simulation.py # Script to simulate attacks
-└── requirements.txt       # Python dependencies
+project/
+│
+├── controller/
+│   └── controller.py         # Ryu SDN controller with traffic classification
+│
+├── topology/
+│   └── topology.py           # Mininet network topology definition
+│
+├── honeypots/
+│   ├── triage_honeypot/
+│   │   └── app.py            # Triage honeypot with ML integration
+│   └── deep_honeypot/
+│       └── app.py            # Deep honeypot with extensive logging
+│
+├── servers/
+│   ├── common/               # Shared web service code
+│   │   ├── web_service.py
+│   │   └── templates/        # HTML templates
+│   ├── server1/
+│   │   └── app.py            # Normal server 1
+│   └── server2/
+│       └── app.py            # Normal server 2
+│
+├── ml_model/
+│   ├── simulate_model.py     # ML model simulator
+│   ├── train_model.py        # ML model training pipeline
+│   └── load_model.py         # ML model loader for predictions
+│
+├── dashboard/
+│   ├── app.py                # Flask-based monitoring dashboard
+│   ├── templates/            # Dashboard HTML templates
+│   └── static/               # Dashboard static assets
+│       └── js/
+│           ├── dashboard.js
+│           └── topology_visualization.js
+│
+└── logs/                     # Directory for storing logs
 ```
 
-## Getting Started
+## Prerequisites
 
-1. Start the entire system:
+- Linux environment
+- Python 3.6+
+- Mininet
+- Ryu SDN controller
+- Flask (for web services and dashboard)
+- Pandas, Scikit-learn (for ML model)
 
-```bash
-./start.sh
+## Installation
+
+1. Clone the repository:
+
+   ```
+   git clone https://github.com/yourusername/sdnhoney.git
+   cd sdnhoney
+   ```
+
+2. Install the required packages:
+   ```
+   pip install ryu mininet flask pandas scikit-learn
+   ```
+
+## Usage
+
+### Starting the Network
+
+1. Start the Ryu controller:
+
+   ```
+   ryu-manager controller/controller.py
+   ```
+
+2. In a new terminal, start the Mininet topology:
+   ```
+   sudo python topology/topology.py
+   ```
+
+### Starting Web Services
+
+After the network is up, start the web services on each host in the Mininet CLI:
+
+```
+mininet> server1 python /path/to/servers/server1/app.py &
+mininet> server2 python /path/to/servers/server2/app.py &
+mininet> triage_honeypot python /path/to/honeypots/triage_honeypot/app.py &
+mininet> deep_honeypot python /path/to/honeypots/deep_honeypot/app.py &
 ```
 
-This will start the Ryu controller, Mininet network, ML model service, and deploy the honeypot.
+### Accessing the Web Services
 
-2. To generate attack traffic for testing:
+The web services will be accessible at `http://smtkoca.com` from your host machine or any machine that can reach the Mininet network.
 
-```bash
-python ml_attack_simulation.py
-```
-
-3. Access the dashboard at http://localhost:5000 to monitor system activity.
-
-## Features
-
-- **Intelligent Traffic Analysis**: Uses machine learning to identify suspicious traffic patterns
-- **Dynamic Traffic Redirection**: Suspicious traffic is automatically redirected to the honeypot
-- **Real-time Monitoring**: Web-based dashboard provides visibility into system activity
-- **Deterministic Testing Mode**: Allows for reproducible testing with pre-defined traffic patterns
-- **HTTP Honeypot**: Custom implementation for capturing and analyzing suspicious HTTP traffic
-
-## System Architecture Diagram
+### Starting the Dashboard
 
 ```
-                            +---------------+
-                            |    Dashboard  |
-                            +-------^-------+
-                                    |
-                                    |
-+----------------+          +-------v-------+         +-----------------+
-| Mininet Network|<-------->| SDN Controller|<------->| ML Model Service|
-+----------------+          +---------------+         +-----------------+
-        |                          |
-        |                          |
-+-------v-------+          +-------v-------+
-|  Web Servers  |          |    Honeypot   |
-+---------------+          +---------------+
+python dashboard/app.py
 ```
+
+The dashboard will be accessible at `http://localhost:5000`.
+
+### Training the ML Model
+
+After collecting some logs, you can train the ML model:
+
+```
+python ml_model/train_model.py
+```
+
+The trained model will be saved to `ml_model/ml_model.pkl` and the scaler to `ml_model/scaler.pkl`. The triage honeypot will automatically use the trained model if available.
+
+## Testing the System
+
+1. Generate normal traffic by accessing the web login page and using valid credentials (for normal servers only).
+2. Generate suspicious traffic by:
+   - Making multiple rapid requests
+   - Attempting multiple failed logins
+   - Accessing multiple pages in a short time
 
 ## License
 
-[MIT License]
+This project is licensed under the MIT License - see the LICENSE file for details.
 
-## Acknowledgements
+## Acknowledgments
 
-This project was developed as a research project for network security using SDN principles.
+This project was built based on the concepts of SDN security, honeypots, and machine learning for intrusion detection.

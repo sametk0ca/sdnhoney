@@ -1,7 +1,0 @@
-honeypot kodundaki sorunu  DONE 
-topolojiyi çizdir kendi dashboardda DONE
-2 honeypotlu sistem düşün
-
-topo büyüt DONE
-
-modeli güncelle
