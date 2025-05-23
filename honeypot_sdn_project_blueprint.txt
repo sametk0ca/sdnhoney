@@ -9,16 +9,16 @@ This project aims to create a Software Defined Networking (SDN) environment usin
 
 ## 2. Network Topology
 
-- The topology will be created using Mininet and defined as a Python script.
-- It will be a tree topology with depth = 3.
+- The topology will be created using Mininet and defined as a Python script.  ✅
+- It will be a tree topology with depth = 3. ✅
 - The topology will contain:
-  - Multiple switches forming a hierarchical network (depth = 3).
-  - Multiple host nodes, including:
-    - Normal servers running a web service (e.g., login panel).
-    - 1 Triage Honeypot.
-    - 1 Deep Honeypot.
-- The servers must be reachable from outside Mininet (real network access).
-- Hosts must also be able to initiate outbound connections if needed.
+  - Multiple switches forming a hierarchical network (depth = 3). ✅
+  - Multiple host nodes, including: 
+    - Normal servers running a web service . ✅
+    - 1 Triage Honeypot. ✅
+    - 1 Deep Honeypot. ✅
+- The servers must be reachable from outside Mininet (real network access). ✅
+- Hosts must also be able to initiate outbound connections if needed. ✅
 
 ---
 
@@ -77,13 +77,13 @@ This project aims to create a Software Defined Networking (SDN) environment usin
 
 ## 6. Services on Hosts
 
-- All hosts (normal and honeypot) must run the same dummy web service.
+- All hosts (normal and honeypot) must run the same dummy web service. ✅
   - A login page that accepts credentials.
   - On normal hosts: Valid credentials allow access to a fake admin panel.
   - On honeypots: All credentials are rejected, or the system simulates success but keeps attacker engaged.
 
-- Service can be written in Flask (Python) for simplicity.
-- Make sure to expose the service on HTTP port 80.
+- Service can be written in Flask (Python) for simplicity. ✅
+- Make sure to expose the service on HTTP port 80. (every host has unique port)
 
 ---
 
@@ -110,8 +110,8 @@ This project aims to create a Software Defined Networking (SDN) environment usin
 
 ## 8. External Access
 
-- You must configure Mininet interfaces to allow traffic from external machines.
-- You can use the `--nat` option or manually configure tap interfaces.
+- You must configure Mininet interfaces to allow traffic from external machines. ✅
+- You can use the `--nat` option or manually configure tap interfaces. ✅
 - Make sure that a request to `smtkoca.com` from your host machine or another PC goes into the Mininet network.
 
 ---
@@ -127,7 +127,7 @@ This project aims to create a Software Defined Networking (SDN) environment usin
 
 - A simple web-based dashboard will be developed using Flask + JavaScript (e.g., D3.js or Vis.js).
 - The dashboard will include:
-  - A visual map of the network topology.
+  - A visual map of the network topology. ✅
   - Real-time updates of current flows.
   - Colored links/nodes showing status (green = normal, yellow = suspicious, red = malicious).
   - Panels showing:

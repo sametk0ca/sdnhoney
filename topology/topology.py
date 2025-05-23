@@ -6,6 +6,7 @@ from mininet.net import Mininet
 from mininet.node import RemoteController
 from mininet.log import setLogLevel
 from mininet.cli import CLI
+import os
 
 class SDNTopo(Topo):
     def build(self):
@@ -33,20 +34,31 @@ class SDNTopo(Topo):
 
 def start_mininet_services(net):
     print("Starting HTTP servers on hosts...")
-    python_path_prefix = "PYTHONPATH=/home/samet/.pyenv/versions/3.9.18/lib/python3.9/site-packages:/home/samet/.local/lib/python3.9/site-packages:$PYTHONPATH"
+    # Calculate the absolute path to the project root
+    # __file__ is the path to the current script (topology.py)
+    # os.path.dirname(__file__) is the directory of topology.py (e.g., /path/to/project/topology)
+    # os.path.abspath(os.path.join(os.path.dirname(__file__), '..')) is /path/to/project
+    project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
+
+    server_app_path = os.path.join(project_root, 'servers/server_app.py')
+    triage_app_path = os.path.join(project_root, 'honeypots/triage_honeypot/triage_app.py')
+    deep_app_path = os.path.join(project_root, 'honeypots/deep_honeypot/deep_app.py')
 
     for i in range(1, 9):
         host = net.get(f'h{i}')
-        host.cmd(f'{python_path_prefix} python3 /home/samet/Desktop/sdnhoney/servers/server_app.py > /tmp/h{i}_server.log 2>&1 &')
-        print(f"Started server on h{i}")
+        port_num = 8000 + i # h1 on 8001, h2 on 8002, ... h8 on 8008
+        host.cmd(f'python3 {server_app_path} {port_num} > /tmp/h{i}_server.log 2>&1 &')
+        print(f"Started server on h{i} on port {port_num}")
 
     h9 = net.get('h9')
-    h9.cmd(f'{python_path_prefix} python3 /home/samet/Desktop/sdnhoney/honeypots/triage_honeypot/triage_app.py > /tmp/h9_server.log 2>&1 &')
-    print("Started server on h9 (Triage Honeypot)")
+    h9_port = 8009
+    h9.cmd(f'python3 {triage_app_path} {h9_port} > /tmp/h9_server.log 2>&1 &')
+    print(f"Started server on h9 (Triage Honeypot) on port {h9_port}")
 
     h10 = net.get('h10')
-    h10.cmd(f'{python_path_prefix} python3 /home/samet/Desktop/sdnhoney/honeypots/deep_honeypot/deep_app.py > /tmp/h10_server.log 2>&1 &')
-    print("Started server on h10 (Deep Honeypot)")
+    h10_port = 8010
+    h10.cmd(f'python3 {deep_app_path} {h10_port} > /tmp/h10_server.log 2>&1 &')
+    print(f"Started server on h10 (Deep Honeypot) on port {h10_port}")
 
 class RequestHandler(BaseHTTPRequestHandler):
     net_instance = None # Class variable to hold the Mininet instance

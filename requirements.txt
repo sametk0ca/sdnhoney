@@ -1,5 +1,5 @@
 ryu>=4.34
-mininet>=2.3.0
+# mininet>=2.3.0
 flask>=2.0.0
 pandas>=1.3.0
 scikit-learn>=1.0.0
