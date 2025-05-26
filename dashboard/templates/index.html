@@ -3,110 +3,154 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Mininet Topology Visualization</title>
+    <title>SDN Honey Pot Dashboard</title>
     <script src="https://d3js.org/d3.v6.min.js"></script>
     <style>
+        body { font-family: sans-serif; margin: 0; background-color: #f4f4f4; color: #333; }
+        header { background-color: #333; color: #fff; padding: 1em 0; text-align: center; }
+        nav { display: flex; justify-content: center; background-color: #444; }
+        nav a { color: white; padding: 14px 20px; text-decoration: none; text-align: center; }
+        nav a:hover { background-color: #555; }
+        .container { display: flex; flex-wrap: wrap; padding: 10px; }
+        .topology-container { flex: 1 1 60%; padding: 10px; background-color: #fff; margin: 10px; box-shadow: 0 0 10px rgba(0,0,0,0.1); min-height: 900px; /* Ensure container can grow */ }
+        .logs-container { flex: 1 1 35%; padding: 10px; background-color: #fff; margin: 10px; box-shadow: 0 0 10px rgba(0,0,0,0.1); }
+        .log-box { margin-bottom: 20px; }
+        .log-box h2 { font-size: 1.2em; border-bottom: 1px solid #eee; padding-bottom: 5px; margin-top: 0; }
+        .log-content { 
+            background-color: #282c34; /* Dark background for logs */
+            color: #abb2bf; /* Light grey text */
+            padding: 10px; 
+            border-radius: 5px; 
+            height: 200px; 
+            overflow-y: auto; 
+            white-space: pre-wrap; /* Preserve line breaks and spaces */
+            font-family: monospace;
+            font-size: 0.9em;
+        }
         .node circle {
             fill: #fff;
             stroke-width: 3px;
         }
-
-        .switch {
-            fill: green;
-        }
-
-        .host {
-            fill: blue;
-        }
-
+        .switch { fill: #68b3e9; stroke: #3c89c3; } /* Brighter blue for switches */
+        .host { fill: #68e998; stroke: #3cc372; }   /* Brighter green for hosts */
+        .nat { fill: #f0ad4e; stroke: #eea236; } /* Orange for NAT nodes */
+        .controller { fill: #9b59b6; stroke: #8e44ad; } /* Purple for controller nodes */
         .link {
             fill: none;
-            stroke: #ccc;
+            stroke: #999; /* Darker grey for links */
             stroke-width: 2px;
         }
-
         text {
             font: 10px sans-serif;
             pointer-events: none;
-            fill: white;
+            fill: #333; /* Darker text for better contrast on white node bg */
+        }
+        svg { display: block; margin: auto; }
+        .tooltip {
+            position: absolute;
+            text-align: center;
+            padding: 6px;
+            font: 12px sans-serif;
+            background: lightsteelblue;
+            border: 0px;
+            border-radius: 8px;
+            pointer-events: none; /* To prevent tooltip from interfering with mouse events on nodes */
+            opacity: 0; /* Hidden by default */
+            transition: opacity 0.2s;
         }
     </style>
 </head>
 <body>
-    <h1>Mininet Topology Visualization</h1>
-    <svg width="960" height="600"></svg>
-    <script>
-        const data = {
-            nodes: [
-                { id: 's1', type: 'switch' }, { id: 's21', type: 'switch' }, { id: 's22', type: 'switch' },
-                { id: 's31', type: 'switch' }, { id: 's32', type: 'switch' }, { id: 's33', type: 'switch' }, { id: 's34', type: 'switch' },
-                { id: 'h1', type: 'host' }, { id: 'h2', type: 'host' }, { id: 'h3', type: 'host' }, { id: 'h4', type: 'host' },
-                { id: 'h5', type: 'host' }, { id: 'h6', type: 'host' }, { id: 'h7', type: 'host' }, { id: 'h8', type: 'host' },
-                { id: 'h9', type: 'host' }, { id: 'h10', type: 'host' }
-            ],
-            links: [
-                { source: 's1', target: 's21' }, { source: 's1', target: 's22' },
-                { source: 's21', target: 's31' }, { source: 's21', target: 's32' },
-                { source: 's22', target: 's33' }, { source: 's22', target: 's34' },
-                { source: 's31', target: 'h1' }, { source: 's31', target: 'h5' }, { source: 's31', target: 'h9' },
-                { source: 's32', target: 'h2' }, { source: 's32', target: 'h6' }, { source: 's32', target: 'h10' },
-                { source: 's33', target: 'h3' }, { source: 's33', target: 'h7' },
-                { source: 's34', target: 'h4' }, { source: 's34', target: 'h8' }
-            ]
-        };
+    <header>
+        <h1>SDN Honey Pot Monitoring Dashboard</h1>
+    </header>
+    
 
-        const svg = d3.select("svg"),
+    <div class="container">
+        <div class="topology-container" id="topology">
+            <h2>Network Topology</h2>
+            <svg width="960" height="700"></svg>
+        </div>
+        <div class="logs-container" id="logs">
+            <h2>System Logs</h2>
+            {% for log_type in log_types %}
+            <div class="log-box" id="log-box-{{ log_type }}">
+                <h2>{{ log_type.replace("_", " ")|title }} Log</h2>
+                <div class="log-content" id="log-{{ log_type }}">Loading {{ log_type }} log...</div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+
+    <!-- Add tooltip div to the body -->
+    <div class="tooltip"></div>
+
+    <script>
+        // D3 Topology Code (modified to fit new layout and slightly adjusted height)
+        // const topologyData = { ... }; // This will be replaced by fetched data
+
+        const svg = d3.select(".topology-container svg"),
             width = +svg.attr("width"),
             height = +svg.attr("height");
 
-        const simulation = d3.forceSimulation(data.nodes)
-            .force("link", d3.forceLink(data.links).id(d => d.id))
-            .force("charge", d3.forceManyBody().strength(-400))
-            .force("center", d3.forceCenter(width / 2, height / 2));
+        let simulation; // Declare simulation here to be accessible in update function
+        let linkElements, nodeElements, textElements; // Store selections for updates
 
-        const link = svg.append("g")
-            .attr("class", "links")
-            .selectAll("line")
-            .data(data.links)
-            .enter().append("line")
-            .attr("class", "link");
+        function initializeSimulation(nodes, links) {
+            simulation = d3.forceSimulation(nodes)
+                .force("link", d3.forceLink(links).id(d => d.id).distance(70))
+                .force("charge", d3.forceManyBody().strength(-300))
+                .force("center", d3.forceCenter(width / 2, height / 2));
 
-        const node = svg.append("g")
-            .attr("class", "nodes")
-            .selectAll("circle")
-            .data(data.nodes)
-            .enter().append("circle")
-            .attr("r", 12)
-            .attr("class", d => d.type)
-            .call(d3.drag()
-                .on("start", dragstarted)
-                .on("drag", dragged)
-                .on("end", dragended));
+            // Clear existing elements before drawing new ones
+            svg.selectAll(".links").remove();
+            svg.selectAll(".nodes").remove();
 
-        const labels = svg.append("g")
-            .attr("class", "labels")
-            .selectAll("text")
-            .data(data.nodes)
-            .enter().append("text")
-            .attr("dy", 3)
-            .attr("text-anchor", "middle")
-            .text(d => d.id);
+            linkElements = svg.append("g")
+                .attr("class", "links")
+                .selectAll("line")
+                .data(links)
+                .enter().append("line")
+                .attr("class", "link");
 
-        simulation.on("tick", () => {
-            link
-                .attr("x1", d => d.source.x)
-                .attr("y1", d => d.source.y)
-                .attr("x2", d => d.target.x)
-                .attr("y2", d => d.target.y);
+            const nodeGroups = svg.append("g")
+                .attr("class", "nodes")
+                .selectAll("g")
+                .data(nodes)
+                .enter().append("g")
+                .call(d3.drag()
+                    .on("start", dragstarted)
+                    .on("drag", dragged)
+                    .on("end", dragended))
+                .on("mouseover", handleMouseOver)
+                .on("mouseout", handleMouseOut);
 
-            node
-                .attr("cx", d => d.x)
-                .attr("cy", d => d.y);
+            nodeGroups.append("circle")
+                .attr("r", 15)
+                .attr("class", d => d.type);
+            
+            nodeGroups.append("text")
+                .text(d => d.id)
+                .attr('x', 0)
+                .attr('y', 5)
+                .attr('text-anchor', 'middle')
+                .style('font-size', '10px')
+                .style('fill', d => d.type === 'switch' ? '#fff' : '#333');
 
-            labels
-                .attr("x", d => d.x)
-                .attr("y", d => d.y);
-        });
+            nodeElements = nodeGroups; // Store the group selection
+
+            simulation.on("tick", () => {
+                linkElements
+                    .attr("x1", d => d.source.x)
+                    .attr("y1", d => d.source.y)
+                    .attr("x2", d => d.target.x)
+                    .attr("y2", d => d.target.y);
+
+                nodeElements
+                    .attr("transform", d => `translate(${d.x},${d.y})`);
+            });
+            simulation.alpha(1).restart(); // Ensure simulation runs
+        }
 
         function dragstarted(event, d) {
             if (!event.active) simulation.alphaTarget(0.3).restart();
@@ -124,6 +168,136 @@
             d.fx = null;
             d.fy = null;
         }
+
+        // Tooltip functions
+        const tooltip = d3.select(".tooltip");
+
+        function handleMouseOver(event, d) {
+            tooltip.transition()
+                .duration(200)
+                .style("opacity", .9);
+            
+            let tooltipContent = `ID: ${d.id}<br/>Type: ${d.type}`;
+            if (d.ip) {
+                tooltipContent += `<br/>IP: ${d.ip}`;
+            }
+            if (d.mac) {
+                tooltipContent += `<br/>MAC: ${d.mac}`;
+            }
+
+            tooltip.html(tooltipContent)
+                .style("left", (event.pageX + 15) + "px") // Offset from cursor
+                .style("top", (event.pageY - 28) + "px");
+        }
+
+        function handleMouseOut(event, d) {
+            tooltip.transition()
+                .duration(500)
+                .style("opacity", 0);
+        }
+
+        // Fetch logs
+        const logTypes = [{% for log_type in log_types %}"{{ log_type }}"{% if not loop.last %}, {% endif %}{% endfor %}];
+        
+        async function fetchLog(logType) {
+            const logDiv = document.getElementById(`log-${logType}`);
+            try {
+                const response = await fetch(`/logs/${logType}`);
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    logDiv.textContent = `Error loading ${logType} log: ${errorData.error || response.statusText}`;
+                    logDiv.style.color = 'red';
+                    return;
+                }
+                const data = await response.json();
+                logDiv.textContent = data.content || 'Log is empty or unavailable.';
+                // Scroll to the bottom of the log content
+                logDiv.scrollTop = logDiv.scrollHeight;
+            } catch (error) {
+                logDiv.textContent = `Failed to fetch ${logType} log: ${error.message}`;
+                logDiv.style.color = 'red';
+            }
+        }
+
+        function fetchAllLogs() {
+            logTypes.forEach(logType => {
+                fetchLog(logType);
+            });
+        }
+
+        async function fetchTopology() {
+            const topologyContainer = document.querySelector(".topology-container svg");
+            try {
+                const response = await fetch('/api/mininet_topology');
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    console.error("Error fetching topology (response not ok):", errorData.error || response.statusText, "Status:", response.status);
+                    // Display error in the topology SVG area
+                    svg.selectAll("*").remove(); // Clear previous content
+                    svg.append("text")
+                       .attr("x", width / 2)
+                       .attr("y", height / 2)
+                       .attr("text-anchor", "middle")
+                       .style("fill", "red")
+                       .text("Error loading topology: " + (errorData.error || response.statusText));
+                    return;
+                }
+                const topologyData = await response.json();
+                console.log("Received topologyData from /api/mininet_topology:", JSON.stringify(topologyData, null, 2));
+
+                if (topologyData.nodes && topologyData.links) {
+                    if (topologyData.nodes.length === 0 && topologyData.links.length === 0) {
+                        console.warn("Topology data received but nodes and links arrays are empty.");
+                        svg.selectAll("*").remove(); 
+                        svg.append("text")
+                          .attr("x", width / 2)
+                          .attr("y", height / 2)
+                          .attr("text-anchor", "middle")
+                          .style("fill", "orange")
+                          .text("Mininet reports an empty topology.");
+                    } else {
+                        initializeSimulation(topologyData.nodes, topologyData.links);
+                    }
+                } else if (topologyData.error) {
+                     console.error("Error in topology data:", topologyData.error);
+                     svg.selectAll("*").remove();
+                     svg.append("text")
+                       .attr("x", width / 2)
+                       .attr("y", height / 2)
+                       .attr("text-anchor", "middle")
+                       .style("fill", "red")
+                       .text("Error: " + topologyData.error);
+                }
+                 else {
+                    console.error("Received invalid topology data format.");
+                    svg.selectAll("*").remove();
+                    svg.append("text")
+                       .attr("x", width / 2)
+                       .attr("y", height / 2)
+                       .attr("text-anchor", "middle")
+                       .style("fill", "orange")
+                       .text("Waiting for Mininet topology data...");
+                }
+            } catch (error) {
+                console.error("Failed to fetch topology:", error);
+                svg.selectAll("*").remove();
+                svg.append("text")
+                   .attr("x", width / 2)
+                   .attr("y", height / 2)
+                   .attr("text-anchor", "middle")
+                   .style("fill", "red")
+                   .text("Failed to connect to topology API.");
+            }
+        }
+
+        // Fetch logs and topology on page load and then set intervals
+        document.addEventListener('DOMContentLoaded', () => {
+            fetchAllLogs();
+            fetchTopology(); // Fetch initial topology ONCE
+            setInterval(fetchAllLogs, 30000); // Refresh logs every 30 seconds
+            // setInterval(fetchTopology, 30000); // DO NOT Refresh topology every 30 seconds
+        });
+
     </script>
 </body>
 </html> 

@@ -44,11 +44,13 @@ def start_mininet_services(net):
     triage_app_path = os.path.join(project_root, 'honeypots/triage_honeypot/triage_app.py')
     deep_app_path = os.path.join(project_root, 'honeypots/deep_honeypot/deep_app.py')
 
+    standard_backend_port = 8000 # Define a standard port for h1-h8
+
     for i in range(1, 9):
         host = net.get(f'h{i}')
-        port_num = 8000 + i # h1 on 8001, h2 on 8002, ... h8 on 8008
-        host.cmd(f'python3 {server_app_path} {port_num} > /tmp/h{i}_server.log 2>&1 &')
-        print(f"Started server on h{i} on port {port_num}")
+        # Use the standard_backend_port for h1-h8
+        host.cmd(f'python3 {server_app_path} {standard_backend_port} > /tmp/h{i}_server.log 2>&1 &')
+        print(f"Started server on h{i} on port {standard_backend_port}")
 
     h9 = net.get('h9')
     h9_port = 8009
@@ -80,14 +82,43 @@ class RequestHandler(BaseHTTPRequestHandler):
             nodes_data = []
             for node_name in RequestHandler.net_instance.nameToNode:
                 node = RequestHandler.net_instance.nameToNode[node_name]
-                node_type = "unknown"
+                node_info = {"id": node_name, "type": "unknown", "ip": None, "mac": None}
+
+                # Get MAC address - all nodes should have at least one interface
+                # Using the MAC of the first interface for simplicity
+                try:
+                    node_info["mac"] = node.MAC()
+                except AttributeError: # Some node types might not have a simple MAC() method
+                    # Try to get MAC from the first interface if available
+                    if node.intfList():
+                        node_info["mac"] = node.intfList()[0].mac
+
                 if node_name.startswith('h'):
-                    node_type = "host"
+                    node_info["type"] = "host"
+                    try:
+                        node_info["ip"] = node.IP()
+                    except AttributeError: # In case a host somehow doesn't have an IP directly
+                        pass 
                 elif node_name.startswith('s'):
-                    node_type = "switch"
-                # Optionally, filter out controllers or other types if not needed for visualization
-                if node_type in ["host", "switch"]:
-                    nodes_data.append({"id": node_name, "type": node_type})
+                    node_info["type"] = "switch"
+                    # Switches don't typically have an IP in the same way hosts do in Mininet
+                    # Their MAC is usually their datapath ID (DPID), but node.MAC() might give a base MAC.
+                elif node_name == 'nat0':
+                    node_info["type"] = "nat"
+                    # NAT node might have multiple interfaces with IPs, getting the primary one if possible
+                    if node.intfList():
+                         # This is a heuristic, NAT interface names can vary.
+                         # We're looking for an interface that is not the local one (e.g., nat0-eth0 vs lo)
+                        for intf in node.intfList():
+                            if intf.name != 'lo' and hasattr(intf, 'ip') and intf.ip:
+                                node_info["ip"] = intf.ip
+                                break
+                elif node_name.startswith('c'): 
+                    node_info["type"] = "controller"
+                    # Controllers in Mininet don't have IP/MAC in the context of the topology data plane
+                
+                if node_info["type"] in ["host", "switch", "nat", "controller"]:
+                    nodes_data.append(node_info)
 
             links_data = []
             for link in RequestHandler.net_instance.links:
@@ -103,9 +134,9 @@ class RequestHandler(BaseHTTPRequestHandler):
 
 def run_topology_api_server_thread_target(net):
     RequestHandler.net_instance = net
-    server_address = ('', 8000)
+    server_address = ('', 8081)
     httpd = HTTPServer(server_address, RequestHandler)
-    print(f"Topology API server listening on port 8000 in a background thread...")
+    print(f"Topology API server listening on port {server_address[1]} in a background thread...")
     httpd.serve_forever() # This will block the thread
     # When thread is stopped (e.g. main program exits if daemon), this might not be reached directly
     # httpd.server_close() # Proper cleanup if serve_forever could be interrupted gracefully

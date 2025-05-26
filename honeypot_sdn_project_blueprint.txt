@@ -24,14 +24,14 @@ This project aims to create a Software Defined Networking (SDN) environment usin
 
 ## 3. SDN Controller (Ryu)
 
-- A custom Ryu controller will be developed.
+- A custom Ryu controller will be developed. ✅
 - Its responsibilities include:
-  - Inspecting traffic using several initial parameters (source IP, request rate, port/protocol, etc.).
-  - Classifying traffic as `normal` or `suspicious` using basic rule-based checks.
-  - If traffic is `normal`:
+  - Inspecting traffic using several initial parameters (source IP, request rate, port/protocol, etc.).✅
+  - Classifying traffic as `normal` or `suspicious` using basic rule-based checks. ✅
+  - If traffic is `normal`: 
     - Forward it to one of the normal hosts via a load balancing mechanism.
   - If traffic is `suspicious`:
-    - Redirect it to the Triage Honeypot for deeper inspection.
+    - Redirect it to the Triage Honeypot for deeper inspection. ✅
     - The Triage Honeypot uses an ML model to further classify the request.
       - If the ML model marks it as `normal`: Send back to normal servers.
       - If marked `malicious`: Forward to Deep Honeypot.
