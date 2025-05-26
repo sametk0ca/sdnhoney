@@ -1,10 +1,26 @@
-from flask import Flask
+from flask import Flask, request
 import sys
+import datetime
+import os
 
 app = Flask(__name__)
 
+# Define log file path within the app
+LOG_FILE_PATH = os.path.join(os.path.dirname(__file__), "..", "..", "logs", "deep_honeypot.log")
+
+def log_activity(ip_address: str, reason: str):
+    """Logs activity to the deep honeypot's log file."""
+    timestamp = datetime.datetime.now().strftime("%d/%m/%Y %H:%M:%S")
+    log_message = f"{timestamp} -- {ip_address} -- {reason}\n"
+    os.makedirs(os.path.dirname(LOG_FILE_PATH), exist_ok=True)
+    with open(LOG_FILE_PATH, "a") as f:
+        f.write(log_message)
+
 @app.route('/')
 def hello():
+    # Log the request
+    # For now, using a generic reason. This should be updated based on actual detection logic.
+    log_activity(request.remote_addr, "Connection to deep honeypot")
     return "Hello from Deep Honeypot\n"
 
 if __name__ == '__main__':
