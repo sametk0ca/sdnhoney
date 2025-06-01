@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SDN Honeypot Security Dashboard</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/dashboard.css') }}">
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    <div class="dashboard-container">
+        <!-- Header -->
+        <header class="dashboard-header">
+            <h1>🛡️ SDN Honeypot Security Dashboard</h1>
+            <div class="status-indicators">
+                <div class="status-item">
+                    <span class="status-label">Controller:</span>
+                    <span id="controller-status" class="status-value">Unknown</span>
+                </div>
+                <div class="status-item">
+                    <span class="status-label">Last Update:</span>
+                    <span id="last-update" class="status-value">Never</span>
+                </div>
+            </div>
+        </header>
+
+        <!-- Main Grid -->
+        <div class="dashboard-grid">
+            <!-- Network Topology -->
+            <div class="panel topology-panel">
+                <h2>🌐 Network Topology</h2>
+                <div id="topology-container">
+                    <svg id="topology-svg"></svg>
+                </div>
+                <div class="topology-legend">
+                    <div class="legend-item">
+                        <div class="legend-color switch"></div>
+                        <span>Switches</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-color normal"></div>
+                        <span>Normal Servers</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-color honeypot"></div>
+                        <span>Honeypots</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-color client"></div>
+                        <span>Client</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Statistics Panel -->
+            <div class="panel stats-panel">
+                <h2>📊 Live Statistics</h2>
+                <div class="stats-grid">
+                    <div class="stat-item">
+                        <div class="stat-value" id="active-ips">0</div>
+                        <div class="stat-label">Active IPs</div>
+                    </div>
+                    <div class="stat-item suspicious">
+                        <div class="stat-value" id="suspicious-ips">0</div>
+                        <div class="stat-label">Suspicious IPs</div>
+                    </div>
+                    <div class="stat-item malicious">
+                        <div class="stat-value" id="malicious-ips">0</div>
+                        <div class="stat-label">Malicious IPs</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-value" id="flow-count">0</div>
+                        <div class="stat-label">Active Flows</div>
+                    </div>
+                </div>
+                
+                <!-- Host Status -->
+                <div class="host-status">
+                    <h3>Host Status</h3>
+                    <div id="host-status-grid" class="host-grid"></div>
+                </div>
+            </div>
+
+            <!-- Traffic History Chart -->
+            <div class="panel chart-panel">
+                <h2>📈 Traffic History</h2>
+                <canvas id="traffic-chart"></canvas>
+            </div>
+
+            <!-- Honeypot Alerts -->
+            <div class="panel alerts-panel">
+                <h2>🚨 Honeypot Alerts</h2>
+                <div id="alerts-container" class="alerts-list">
+                    <div class="no-alerts">No recent alerts</div>
+                </div>
+            </div>
+
+            <!-- Traffic Flows -->
+            <div class="panel flows-panel">
+                <h2>🔀 Active Traffic Flows</h2>
+                <div id="flows-container" class="flows-list">
+                    <div class="no-flows">No active flows detected</div>
+                </div>
+            </div>
+
+            <!-- System Logs -->
+            <div class="panel logs-panel">
+                <h2>📝 System Activity</h2>
+                <div id="logs-container" class="logs-list">
+                    <div class="log-entry">Dashboard initialized</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="{{ url_for('static', filename='js/dashboard.js') }}"></script>
+</body>
+</html> 

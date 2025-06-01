@@ -1,0 +1,187 @@
+
+# Honeypot-based SDN Security Project (Mininet + Ryu + Python + Machine Learning)
+
+## 1. Overview
+
+This project aims to create a Software Defined Networking (SDN) environment using Mininet and Ryu controller, integrated with honeypot systems and machine learning to detect and analyze suspicious traffic. The goal is to simulate a realistic network with multiple hosts and a domain endpoint, detect potentially malicious traffic at the controller level, and redirect it through a triage process using honeypots and ML.
+
+---
+
+## 2. Network Topology
+
+- The topology will be created using Mininet and defined as a Python script.  ✅
+- It will be a tree topology with depth = 3. ✅
+- The topology will contain:
+  - Multiple switches forming a hierarchical network (depth = 3). ✅
+  - Multiple host nodes, including: 
+    - Normal servers running a web service . ✅
+    - 1 Triage Honeypot. ✅
+    - 1 Deep Honeypot. ✅
+- The servers must be reachable from outside Mininet (real network access). ✅
+- Hosts must also be able to initiate outbound connections if needed. ✅
+
+---
+
+
+---
+
+
+## 3. Honeypots
+
+### 3.1 Triage Honeypot
+
+- Runs the same web service as normal hosts.
+- All credentials should fail intentionally (to detect attackers).
+- Logs the following data for each request:
+  - Source IP
+  - Request type and payload
+  - Timestamp
+  - Number of attempts
+  - Protocol and port
+  - Maybe you can enhance the parameters
+- Uses an ML model (you can simulate this at first, later you will implement this) to classify traffic.
+  - Example model input: request rate, failed login count, port used, etc.
+  - Outputs: `normal` or `malicious`
+
+### 3.2 Deep Honeypot
+
+- Also mimics the real web service.
+- Never allows access — but makes the attacker think they are progressing.
+  - E.g., fake dashboards, fake file downloads.
+- Extensively logs:
+  - Keystrokes (if possible)
+  - Pages visited
+  - All request headers and bodies
+  - Timing and frequency patterns
+
+---
+
+## 4. Services on Hosts
+
+- All hosts (normal and honeypots) must run the same dummy web service. ✅
+  - A login page that accepts credentials.
+  - On normal hosts: Valid credentials allow access to a fake admin panel.
+  - On honeypots: All credentials are rejected, or the system simulates success but keeps attacker engaged.
+
+- Service can be written in Flask (Python) for simplicity. ✅
+- Make sure to expose the service on HTTP port 80. (every host has unique port)
+
+---
+
+## 5. Machine Learning Model (Simulation + Retraining)
+
+### 5.1 Simulation Phase
+
+- Start with a simulated ML model using if-else rules or a dummy classifier.
+- Example inputs:
+  - IP address entropy
+  - Login failure count
+  - Access timing
+  - Protocol used
+
+### 5.2 Future Training Phase
+
+- Develop a Python-based training pipeline using `pandas`, `scikit-learn`, or similar libraries.
+- Periodically extract logs from the Deep Honeypot and convert them into labeled training data.
+- Model goal: classify request as `normal` or `malicious` based on multiple features.
+- Use train-test split, and evaluate accuracy/precision/recall.
+- Save model as a pickle file and load it into the triage honeypot pipeline.
+
+---
+
+## 6. SDN Controller (Ryu)
+
+- A custom Ryu controller will be developed. ✅
+- Its responsibilities include:
+  - Inspecting traffic using several initial parameters (source IP, request rate, port/protocol, etc.).✅
+  - Classifying traffic as `normal` or `suspicious` using basic rule-based checks. ✅
+  - If traffic is `normal`: 
+    - Forward it to one of the normal hosts via a load balancing mechanism.
+  - If traffic is `suspicious`:
+    - Redirect it to the Triage Honeypot for deeper inspection. ✅
+    - The Triage Honeypot uses an ML model to further classify the request.
+      - If the ML model marks it as `normal`: Send back to normal servers.
+      - If marked `malicious`: Forward to Deep Honeypot.
+---y
+
+## 8. Logging and Monitoring
+
+- All traffic classifications (by controller and ML model) should be logged.
+- Honeypot logs must be stored persistently (e.g., into local files as json or txt).
+
+---
+
+## 9. Monitoring Dashboard
+
+- A simple web-based dashboard will be developed using Flask + JavaScript (e.g., D3.js or Vis.js).
+- The dashboard will include:
+  - A visual map of the network topology. ✅
+  - Real-time updates of current flows.
+  - Colored links/nodes showing status (green = normal, yellow = suspicious, red = malicious).
+  - Panels showing:
+    - Logged IPs
+    - Number of requests to each host
+    - Honeypot detection results
+    - Controller flow rules in action
+
+---
+
+## 10. Project Structure
+
+Recommended folder layout:
+project/
+│
+├── controller/
+│   └── controller.py
+│
+├── topology/
+│   └── topology.py
+│
+├── honeypots/
+│   ├── triage_honeypot/
+│   │   └── app.py
+│   └── deep_honeypot/
+│       └── app.py
+│
+├── servers/
+│   ├── server1/
+│   │   └── app.py
+│   └── server2/
+│       └── app.py
+│
+├── ml_model/
+│   └── simulate_model.py
+│
+├── dashboard/
+│   └── app.py (Flask-based)
+│   └── static/
+│       └── topology_visualization.js
+│
+└── logs/
+    └── traffic_logs.csv
+
+---
+
+## 11. Development Steps (Suggested Order)
+
+1. Build the topology in Mininet.
+2. Implement the basic web service (Flask) and test on all hosts.
+3. Develop the Ryu controller with basic flow management.
+4. Add logic to detect suspicious traffic.
+5. Implement redirection to triage honeypot.
+7. Implement deep honeypot behavior.
+8. Set up external access.
+9. Add logging everywhere.
+10. Build and deploy the monitoring dashboard.
+11. Begin retraining pipeline for ML Model.
+12. Optimize and polish.
+
+---
+
+## 13. Final Notes
+
+- This project simulates a real-world network security scenario.
+- Modular development is key — test each component separately.
+- Start simple, then enhance.
+- Honeypot behavior should be believable to attackers.
+- Avoid hard-coding.
