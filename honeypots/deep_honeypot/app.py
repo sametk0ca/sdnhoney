@@ -13,7 +13,7 @@ app = Flask(__name__)
 app.secret_key = 'deep_honeypot_secret_key_666'
 
 # Logging directory
-LOG_DIR = '/home/samet/Desktop/sdnhoney/logs'
+LOG_DIR = os.path.join(os.path.dirname(__file__), '../../logs')
 os.makedirs(LOG_DIR, exist_ok=True)
 
 # Track attacker sessions

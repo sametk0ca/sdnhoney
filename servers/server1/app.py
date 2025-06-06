@@ -12,12 +12,12 @@ app.secret_key = 'normal_server_secret_key_12345'
 # Valid credentials for normal servers
 VALID_CREDENTIALS = {
     'admin': 'password123',
-    'user': 'user123',
-    'test': 'test123'
+    'user': 'userpass',
+    'john': 'johnpass'
 }
 
 # Logging directory
-LOG_DIR = '/home/samet/Desktop/sdnhoney/logs'
+LOG_DIR = os.path.join(os.path.dirname(__file__), '../../logs')
 os.makedirs(LOG_DIR, exist_ok=True)
 
 def log_request(request_type, source_ip, success=False, username=None):

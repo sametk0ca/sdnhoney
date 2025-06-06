@@ -50,8 +50,8 @@ class HoneypotSDNTopo(Topo):
         triage_hp = self.addHost('h4', ip='10.0.0.4/24')  # Triage honeypot
         deep_hp = self.addHost('h5', ip='10.0.0.5/24')    # Deep honeypot
         
-        # External client host for testing
-        client = self.addHost('h6', ip='10.0.0.6/24')     # Client for testing
+        # External source host for testing
+        external_source = self.addHost('h6', ip='10.0.0.6/24')     # External source for testing
         
         # Connect hosts to leaf switches
         self.addLink(h1, s4)
@@ -59,7 +59,7 @@ class HoneypotSDNTopo(Topo):
         self.addLink(h3, s6)
         self.addLink(triage_hp, s7)
         self.addLink(deep_hp, s7)
-        self.addLink(client, s4)
+        self.addLink(external_source, s4)
 
 def setup_network():
     """Setup and run the honeypot SDN network"""
@@ -76,14 +76,14 @@ def setup_network():
         autoStaticArp=True
     )
     
-    # Add NAT for external connectivity
-    net.addNAT().configDefault()
+    # No NAT - h6 is treated as external source
     
     info("*** Starting network\n")
     net.start()
+    info("*** Waiting for controller to settle...\n")
+    time.sleep(5)
+
     
-    info("*** Testing connectivity\n")
-    net.pingAll()
     
     info("*** Network topology:\n")
     dumpNodeConnections(net.hosts)
@@ -101,42 +101,93 @@ def setup_host_services(net):
     """Setup services on each host"""
     hosts = net.hosts
     
+    # Get the current working directory (should be the project root)
+    project_root = os.path.dirname(os.path.abspath(__file__))
+    project_root = os.path.dirname(project_root)  # Go up one level from topology/ to sdnhoney/
+    
+    # Create logs directory
+    logs_dir = os.path.join(project_root, 'logs')
+    os.makedirs(logs_dir, exist_ok=True)
+    
     # Start web services on each host
     for host in hosts:
-        if host.name == 'nat0':  # Skip NAT
+        # h6 is external source - no services needed
+        if host.name == 'h6':
             continue
             
         # Define service ports (unique for each host)
         if host.name == 'h1':
             port = 8001
             service_type = 'normal'
+            service_path = f'{project_root}/servers/server1'
         elif host.name == 'h2': 
             port = 8002
             service_type = 'normal'
+            service_path = f'{project_root}/servers/server2'
         elif host.name == 'h3':
             port = 8003 
             service_type = 'normal'
+            service_path = f'{project_root}/servers/server3'
         elif host.name == 'h4':
             port = 8004
             service_type = 'triage_honeypot'
+            service_path = f'{project_root}/honeypots/triage_honeypot'
         elif host.name == 'h5':
             port = 8005
             service_type = 'deep_honeypot'
-        else:  # h6 client
+            service_path = f'{project_root}/honeypots/deep_honeypot'
+        else:  # Unknown host
             continue
             
         info(f"Starting {service_type} service on {host.name} at port {port}\n")
+        info(f"Service path: {service_path}\n")
         
-        # Start the appropriate service
-        if service_type == 'normal':
-            host.cmd(f'cd /home/samet/Desktop/sdnhoney/servers/server{host.name[-1]} && python3 app.py {port} &')
-        elif service_type == 'triage_honeypot':
-            host.cmd(f'cd /home/samet/Desktop/sdnhoney/honeypots/triage_honeypot && python3 app.py {port} &')
-        elif service_type == 'deep_honeypot':
-            host.cmd(f'cd /home/samet/Desktop/sdnhoney/honeypots/deep_honeypot && python3 app.py {port} &')
+        # Start the appropriate service with proper path and output redirection
+        if os.path.exists(service_path):
+            # Use absolute path and redirect output to logs
+            log_file = f"{logs_dir}/{host.name}_service.log"
+            cmd = f'cd {service_path} && python3 app.py {port} > {log_file} 2>&1 &'
+            info(f"Command: {cmd}\n")
+            host.cmd(cmd)
+        else:
+            info(f"Warning: Service path {service_path} does not exist!\n")
     
-    # Give services time to start
-    time.sleep(2)
+    # Give services more time to start
+    info("Waiting for services to start...\n")
+    time.sleep(5)  # Increased to 5 seconds
+    
+    # Check if services started successfully
+    info("*** Checking service status...\n")
+    for host in hosts:
+        if host.name == 'h6':
+            continue
+        
+        if host.name == 'h1':
+            port = 8001
+        elif host.name == 'h2':
+            port = 8002
+        elif host.name == 'h3':
+            port = 8003
+        elif host.name == 'h4':
+            port = 8004
+        elif host.name == 'h5':
+            port = 8005
+        else:
+            continue
+            
+        # Test if the service is listening using the host's network namespace
+        result = host.cmd(f'netstat -ln | grep :{port}')
+        if result.strip():
+            info(f"✅ {host.name} service running on port {port}\n")
+        else:
+            info(f"❌ {host.name} service failed to start on port {port}\n")
+            # Show any error logs
+            log_file = f"{logs_dir}/{host.name}_service.log"
+            if os.path.exists(log_file):
+                info(f"Log file content for {host.name}:\n")
+                with open(log_file, 'r') as f:
+                    log_content = f.read()[-500:]  # Show last 500 characters
+                    info(f"{log_content}\n")
 
 if __name__ == '__main__':
     # Ensure script is run with sudo

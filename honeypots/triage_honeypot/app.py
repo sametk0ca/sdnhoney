@@ -8,11 +8,15 @@ import datetime
 import requests
 from collections import defaultdict
 
+# Import the simplified ML model
+sys.path.append(os.path.join(os.path.dirname(__file__), '../../ml_model'))
+from simulate_model import classify_traffic
+
 app = Flask(__name__)
 app.secret_key = 'triage_honeypot_secret_key_999'
 
 # Logging directory
-LOG_DIR = '/home/samet/Desktop/sdnhoney/logs'
+LOG_DIR = os.path.join(os.path.dirname(__file__), '../../logs')
 os.makedirs(LOG_DIR, exist_ok=True)
 
 # Track failed attempts per IP
@@ -40,64 +44,50 @@ def log_request(request_type, source_ip, success=False, username=None, extra_dat
     with open(log_file, 'a') as f:
         f.write(json.dumps(log_entry) + '\n')
 
-def analyze_traffic(source_ip, username=None):
-    """Simulate ML model to classify traffic as normal/malicious"""
-    current_time = datetime.datetime.now()
+def analyze_traffic_with_ml(source_ip, username=None):
+    """
+    Use simplified ML model to classify traffic
+    Returns: classification, risk_score, ml_prediction (1 or 0)
+    """
+    # Prepare request data for ML model
+    request_data = {
+        'username': username or '',
+        'user_agent': request.headers.get('User-Agent', ''),
+        'failed_attempts': failed_attempts[source_ip]
+    }
     
-    # Track request timing
-    request_times[source_ip].append(current_time)
+    # Get ML prediction (1 = malicious, 0 = benign)
+    ml_prediction, risk_score = classify_traffic(source_ip, request_data)
     
-    # Clean old requests (older than 1 hour)
-    request_times[source_ip] = [
-        t for t in request_times[source_ip] 
-        if (current_time - t).seconds < 3600
-    ]
-    
-    # Simple rule-based "ML" classification
-    risk_score = 0
-    
-    # High frequency requests
-    if len(request_times[source_ip]) > 10:  # More than 10 requests in an hour
-        risk_score += 30
-    
-    # Multiple failed attempts
-    if failed_attempts[source_ip] > 3:
-        risk_score += 40
-    
-    # Common attack usernames
-    attack_usernames = ['admin', 'root', 'administrator', 'user', 'test', 'guest']
-    if username and username.lower() in attack_usernames:
-        risk_score += 20
-    
-    # Suspicious user agents
-    user_agent = request.headers.get('User-Agent', '').lower()
-    if any(bot in user_agent for bot in ['bot', 'crawler', 'scanner', 'curl', 'wget']):
-        risk_score += 25
-    
-    # Classification
-    if risk_score >= 60:
+    # Convert to traditional classification for backward compatibility
+    if ml_prediction == 1:
         classification = 'malicious'
-    elif risk_score >= 30:
-        classification = 'suspicious'
+    elif risk_score > 0.3:  # Middle ground
+        classification = 'suspicious'  
     else:
         classification = 'normal'
     
-    return classification, risk_score
+    return classification, risk_score, ml_prediction
 
-def send_to_controller(classification, source_ip, risk_score):
+def send_to_controller(classification, source_ip, risk_score, ml_prediction=None):
     """Send classification result to SDN controller"""
     try:
         controller_url = 'http://127.0.0.1:8080/honeypot/classification'
         data = {
             'source_ip': source_ip,
             'classification': classification,
-            'risk_score': risk_score,
+            'risk_score': risk_score * 100,  # Convert to 0-100 scale
             'honeypot_type': 'triage',
+            'ml_prediction': ml_prediction,  # Include binary ML prediction
             'timestamp': datetime.datetime.now().isoformat()
         }
-        requests.post(controller_url, json=data, timeout=2)
-    except:
-        pass  # Controller might not be running yet
+        
+        response = requests.post(controller_url, json=data, timeout=2)
+        print(f"Sent to controller: IP={source_ip}, Class={classification}, ML={ml_prediction}, Risk={risk_score:.3f}")
+        return response.status_code == 200
+    except Exception as e:
+        print(f"Failed to send to controller: {e}")
+        return False
 
 # HTML Templates (same as normal servers to appear legitimate)
 LOGIN_TEMPLATE = '''
@@ -153,24 +143,33 @@ def login():
         # Always fail authentication in triage honeypot
         failed_attempts[client_ip] += 1
         
-        # Analyze traffic patterns
-        classification, risk_score = analyze_traffic(client_ip, username)
+        # Analyze traffic patterns using ML model
+        classification, risk_score, ml_prediction = analyze_traffic_with_ml(client_ip, username)
         
-        # Log everything
+        # Log everything with ML results
         log_request('login_attempt', client_ip, username=username, 
-                   extra_data={'classification': classification, 'risk_score': risk_score})
+                   extra_data={
+                       'classification': classification, 
+                       'risk_score': risk_score,
+                       'ml_prediction': ml_prediction,
+                       'password_length': len(password) if password else 0
+                   })
         
         # Send results to controller
-        send_to_controller(classification, client_ip, risk_score)
+        send_to_controller(classification, client_ip, risk_score, ml_prediction)
         
         # Always show invalid credentials error
         return render_template_string(LOGIN_TEMPLATE, 
                                     error="Invalid credentials. Please try again.")
     
-    # Log page visits
-    classification, risk_score = analyze_traffic(client_ip)
+    # Log page visits with ML analysis
+    classification, risk_score, ml_prediction = analyze_traffic_with_ml(client_ip)
     log_request('page_visit', client_ip, 
-               extra_data={'classification': classification, 'risk_score': risk_score})
+               extra_data={
+                   'classification': classification, 
+                   'risk_score': risk_score,
+                   'ml_prediction': ml_prediction
+               })
     
     return render_template_string(LOGIN_TEMPLATE)
 
@@ -178,7 +177,17 @@ def login():
 def admin():
     """Admin endpoint that should never be reached"""
     client_ip = request.remote_addr
-    log_request('admin_attempt', client_ip, extra_data={'note': 'Direct admin access attempt'})
+    classification, risk_score, ml_prediction = analyze_traffic_with_ml(client_ip)
+    
+    log_request('admin_attempt', client_ip, extra_data={
+        'note': 'Direct admin access attempt',
+        'classification': classification,
+        'ml_prediction': ml_prediction
+    })
+    
+    # This is highly suspicious - send immediate update to controller
+    send_to_controller('malicious', client_ip, 1.0, 1)
+    
     return redirect(url_for('login'))
 
 @app.route('/health')
@@ -195,7 +204,34 @@ def stats():
         'unique_ips': len(failed_attempts)
     })
 
+@app.route('/api/ml_status')
+def ml_status():
+    """API endpoint to check ML model status"""
+    try:
+        # Test the ML model
+        test_prediction, test_score = classify_traffic('127.0.0.1', {'username': 'test', 'user_agent': 'test'})
+        return jsonify({
+            'status': 'operational',
+            'test_prediction': test_prediction,
+            'test_score': test_score,
+            'model_type': 'simplified_binary'
+        })
+    except Exception as e:
+        return jsonify({
+            'status': 'error',
+            'error': str(e)
+        }), 500
+
 if __name__ == '__main__':
     port = int(sys.argv[1]) if len(sys.argv) > 1 else 8004
     print(f"Starting Triage Honeypot on port {port}")
+    print(f"Using simplified ML model for binary classification (1=malicious, 0=benign)")
+    
+    # Test ML model on startup
+    try:
+        test_pred, test_score = classify_traffic('test.ip', {'username': 'admin', 'user_agent': 'curl'})
+        print(f"ML Model test: prediction={test_pred}, score={test_score:.3f}")
+    except Exception as e:
+        print(f"ML Model error: {e}")
+    
     app.run(host='0.0.0.0', port=port, debug=False) 

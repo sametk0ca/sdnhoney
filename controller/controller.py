@@ -26,7 +26,7 @@ HOSTS = {
     '10.0.0.3': {'name': 'h3', 'type': 'normal_server', 'port': 8003, 'mac': '00:00:00:00:00:03'},
     '10.0.0.4': {'name': 'h4', 'type': 'triage_honeypot', 'port': 8004, 'mac': '00:00:00:00:00:04'},
     '10.0.0.5': {'name': 'h5', 'type': 'deep_honeypot', 'port': 8005, 'mac': '00:00:00:00:00:05'},
-    '10.0.0.6': {'name': 'h6', 'type': 'client', 'port': None, 'mac': '00:00:00:00:00:06'},
+    '10.0.0.6': {'name': 'h6', 'type': 'external_source', 'port': None, 'mac': '00:00:00:00:00:06'},
 }
 
 # Load balancing for normal servers
@@ -70,18 +70,26 @@ class HoneypotSDNController(app_manager.RyuApp):
 
     @set_ev_cls(ofp_event.EventOFPSwitchFeatures, CONFIG_DISPATCHER)
     def switch_features_handler(self, ev):
-        """Handle switch connection"""
+        """Handle switch connection with improved flow installation"""
         datapath = ev.msg.datapath
         ofproto = datapath.ofproto
         parser = datapath.ofproto_parser
 
-        self.logger.info(f"Switch connected: {datapath.id}")
+        self.logger.info(f"Switch s{datapath.id} connected - installing flows")
 
-        # Install default flow to controller
+        # Install default flow to controller (lowest priority)
         match = parser.OFPMatch()
         actions = [parser.OFPActionOutput(ofproto.OFPP_CONTROLLER,
                                           ofproto.OFPCML_NO_BUFFER)]
         self.add_flow(datapath, 0, match, actions)
+        
+        # Install tree topology forwarding flows
+        self._install_tree_forwarding_flows(datapath)
+        
+        # Install ARP flooding rule (medium priority)
+        arp_match = parser.OFPMatch(eth_type=ether_types.ETH_TYPE_ARP)
+        arp_actions = [parser.OFPActionOutput(ofproto.OFPP_FLOOD)]
+        self.add_flow(datapath, 10, arp_match, arp_actions)
 
     def add_flow(self, datapath, priority, match, actions, buffer_id=None, hard_timeout=0):
         """Add a flow entry to the flow table"""
@@ -257,15 +265,21 @@ class HoneypotSDNController(app_manager.RyuApp):
         return server
 
     def _install_redirection_flow(self, datapath, src_ip, original_dst, target_ip, dst_port):
-        """Install flow rules to redirect traffic"""
+        """
+        Install comprehensive flow rules for traffic redirection
+        Creates bidirectional flows with proper timeout and priority
+        """
         parser = datapath.ofproto_parser
         ofproto = datapath.ofproto
         
-        # Get target MAC
+        # Get target information
         target_mac = HOSTS[target_ip]['mac']
+        target_port = self._get_port_for_ip(target_ip)
         
-        # Match incoming packets from src to original destination
-        match = parser.OFPMatch(
+        self.logger.info(f"Installing redirection flow: {src_ip} -> {original_dst} redirected to {target_ip}")
+        
+        # Forward direction: src -> original_dst becomes src -> target
+        forward_match = parser.OFPMatch(
             eth_type=ether_types.ETH_TYPE_IP,
             ipv4_src=src_ip,
             ipv4_dst=original_dst,
@@ -273,29 +287,125 @@ class HoneypotSDNController(app_manager.RyuApp):
             tcp_dst=dst_port
         )
         
-        # Actions: modify destination IP and MAC, then output
-        actions = [
+        forward_actions = [
             parser.OFPActionSetField(ipv4_dst=target_ip),
             parser.OFPActionSetField(eth_dst=target_mac),
-            parser.OFPActionOutput(self._get_port_for_ip(target_ip))
+            parser.OFPActionOutput(target_port)
         ]
         
-        # Install flow with timeout
-        self.add_flow(datapath, 100, match, actions, hard_timeout=300)
+        # Install forward flow with high priority and timeout
+        self.add_flow(datapath, 200, forward_match, forward_actions, hard_timeout=600)
+        
+        # Return direction: target -> src (modify source to appear as original destination)
+        return_match = parser.OFPMatch(
+            eth_type=ether_types.ETH_TYPE_IP,
+            ipv4_src=target_ip,
+            ipv4_dst=src_ip,
+            ip_proto=6
+        )
+        
+        # Get source information for return path
+        src_port = self._get_port_for_ip(src_ip)
+        src_mac = HOSTS[src_ip]['mac'] if src_ip in HOSTS else "00:00:00:00:00:00"
+        
+        return_actions = [
+            parser.OFPActionSetField(ipv4_src=original_dst),  # Appear as original destination
+            parser.OFPActionSetField(eth_dst=src_mac) if src_mac != "00:00:00:00:00:00" else parser.OFPActionOutput(src_port),
+            parser.OFPActionOutput(src_port)
+        ]
+        
+        # Install return flow
+        self.add_flow(datapath, 200, return_match, return_actions, hard_timeout=600)
+        
+        self.logger.info(f"Installed bidirectional flows for {src_ip} <-> {target_ip}")
 
     def _get_port_for_ip(self, ip):
-        """Get switch port for given IP (simplified - assumes single switch)"""
-        # In a real topology, this would query the topology to find the correct port
-        # For our tree topology, we'll use a simple mapping
+        """
+        Get switch port for given IP in tree topology
+        Improved with proper topology mapping
+        """
+        # Tree topology port mapping:
+        # s1 (root): connects to s2 (port 1), s3 (port 2)
+        # s2: connects to s1 (port 1), s4 (port 2), s5 (port 3)  
+        # s3: connects to s1 (port 1), s6 (port 2), s7 (port 3)
+        # s4: connects to s2 (port 1), h1 (port 2), h6 (port 3)
+        # s5: connects to s2 (port 1), h2 (port 2)
+        # s6: connects to s3 (port 1), h3 (port 2)
+        # s7: connects to s3 (port 1), h4 (port 2), h5 (port 3)
+        
         port_map = {
-            '10.0.0.1': 4,  # h1 connected to s4
-            '10.0.0.2': 5,  # h2 connected to s5  
-            '10.0.0.3': 6,  # h3 connected to s6
-            '10.0.0.4': 7,  # h4 connected to s7
-            '10.0.0.5': 8,  # h5 connected to s7
-            '10.0.0.6': 4,  # h6 connected to s4
+            '10.0.0.1': 2,  # h1 on s4 port 2
+            '10.0.0.2': 2,  # h2 on s5 port 2
+            '10.0.0.3': 2,  # h3 on s6 port 2
+            '10.0.0.4': 2,  # h4 on s7 port 2
+            '10.0.0.5': 3,  # h5 on s7 port 3
+            '10.0.0.6': 3,  # h6 on s4 port 3
         }
         return port_map.get(ip, 1)  # Default to port 1
+
+    def _get_switch_for_ip(self, ip):
+        """Get switch ID for given IP"""
+        switch_map = {
+            '10.0.0.1': 4,  # h1 on s4
+            '10.0.0.2': 5,  # h2 on s5  
+            '10.0.0.3': 6,  # h3 on s6
+            '10.0.0.4': 7,  # h4 on s7
+            '10.0.0.5': 7,  # h5 on s7
+            '10.0.0.6': 4,  # h6 on s4
+        }
+        return switch_map.get(ip, 1)  # Default to s1
+
+    def _install_tree_forwarding_flows(self, datapath):
+        """
+        Install forwarding flows for tree topology
+        This creates the basic routing infrastructure
+        """
+        parser = datapath.ofproto_parser
+        dpid = datapath.id
+        
+        self.logger.info(f"Installing tree forwarding flows for switch s{dpid}")
+        
+        # Switch-specific forwarding rules based on tree topology
+        if dpid == 1:  # Root switch s1
+            # Forward to s2 (hosts h1, h2, h6)
+            for ip in ['10.0.0.1', '10.0.0.2', '10.0.0.6']:
+                match = parser.OFPMatch(eth_type=ether_types.ETH_TYPE_IP, ipv4_dst=ip)
+                actions = [parser.OFPActionOutput(1)]  # To s2
+                self.add_flow(datapath, 50, match, actions)
+            
+            # Forward to s3 (hosts h3, h4, h5)
+            for ip in ['10.0.0.3', '10.0.0.4', '10.0.0.5']:
+                match = parser.OFPMatch(eth_type=ether_types.ETH_TYPE_IP, ipv4_dst=ip)
+                actions = [parser.OFPActionOutput(2)]  # To s3
+                self.add_flow(datapath, 50, match, actions)
+                
+        elif dpid == 2:  # Switch s2
+            # Forward to s4 (hosts h1, h6)
+            for ip in ['10.0.0.1', '10.0.0.6']:
+                match = parser.OFPMatch(eth_type=ether_types.ETH_TYPE_IP, ipv4_dst=ip)
+                actions = [parser.OFPActionOutput(2)]  # To s4
+                self.add_flow(datapath, 50, match, actions)
+            
+            # Forward to s5 (host h2)
+            match = parser.OFPMatch(eth_type=ether_types.ETH_TYPE_IP, ipv4_dst='10.0.0.2')
+            actions = [parser.OFPActionOutput(3)]  # To s5
+            self.add_flow(datapath, 50, match, actions)
+            
+        elif dpid == 3:  # Switch s3
+            # Forward to s6 (host h3)
+            match = parser.OFPMatch(eth_type=ether_types.ETH_TYPE_IP, ipv4_dst='10.0.0.3')
+            actions = [parser.OFPActionOutput(2)]  # To s6
+            self.add_flow(datapath, 50, match, actions)
+            
+            # Forward to s7 (hosts h4, h5)
+            for ip in ['10.0.0.4', '10.0.0.5']:
+                match = parser.OFPMatch(eth_type=ether_types.ETH_TYPE_IP, ipv4_dst=ip)
+                actions = [parser.OFPActionOutput(3)]  # To s7
+                self.add_flow(datapath, 50, match, actions)
+        
+        elif dpid in [4, 5, 6, 7]:  # Leaf switches
+            # Direct host connections handled by MAC learning
+            pass
 
     def _forward_to_target(self, datapath, pkt, target_ip, msg):
         """Forward packet to target host"""
@@ -378,19 +488,35 @@ class HoneypotSDNController(app_manager.RyuApp):
             except Exception as e:
                 self.logger.error(f"Monitoring error: {e}")
 
-    def update_classification(self, source_ip, classification, risk_score):
-        """Update IP classification from honeypot feedback"""
-        if classification == 'malicious' and risk_score > 70:
-            self.malicious_ips.add(source_ip)
-            self.suspicious_ips.discard(source_ip)
-            self.logger.info(f"IP {source_ip} marked as MALICIOUS (risk: {risk_score})")
-        elif classification == 'suspicious' and risk_score > 40:
-            self.suspicious_ips.add(source_ip)
-            self.logger.info(f"IP {source_ip} marked as SUSPICIOUS (risk: {risk_score})")
+    def update_classification(self, source_ip, classification, risk_score, ml_prediction=None):
+        """
+        Enhanced classification update with ML model integration
+        """
+        # Handle ML prediction if provided
+        if ml_prediction is not None:
+            if ml_prediction == 1:
+                # ML says malicious - prioritize this
+                self.malicious_ips.add(source_ip)
+                self.suspicious_ips.discard(source_ip)
+                self.logger.info(f"IP {source_ip} marked as MALICIOUS by ML model (prediction=1, risk={risk_score})")
+            elif ml_prediction == 0 and risk_score < 30:
+                # ML says benign and low risk - clean slate
+                self.suspicious_ips.discard(source_ip)
+                self.malicious_ips.discard(source_ip)
+                self.logger.info(f"IP {source_ip} cleared by ML model (prediction=0, risk={risk_score})")
         else:
-            # Clean classification - remove from suspicious/malicious
-            self.suspicious_ips.discard(source_ip)
-            self.malicious_ips.discard(source_ip)
+            # Fallback to traditional risk-based classification
+            if classification == 'malicious' and risk_score > 70:
+                self.malicious_ips.add(source_ip)
+                self.suspicious_ips.discard(source_ip)
+                self.logger.info(f"IP {source_ip} marked as MALICIOUS (risk: {risk_score})")
+            elif classification == 'suspicious' and risk_score > 40:
+                self.suspicious_ips.add(source_ip)
+                self.logger.info(f"IP {source_ip} marked as SUSPICIOUS (risk: {risk_score})")
+            else:
+                # Clean classification - remove from suspicious/malicious
+                self.suspicious_ips.discard(source_ip)
+                self.malicious_ips.discard(source_ip)
 
 
 class HoneypotController(ControllerBase):
@@ -402,17 +528,23 @@ class HoneypotController(ControllerBase):
 
     @route('honeypot', '/honeypot/classification', methods=['POST'])
     def honeypot_classification(self, req, **kwargs):
-        """Receive classification updates from honeypots"""
+        """Receive classification updates from honeypots with ML integration"""
         try:
             data = json.loads(req.body.decode('utf-8'))
             source_ip = data['source_ip']
             classification = data['classification']
             risk_score = data['risk_score']
+            ml_prediction = data.get('ml_prediction', None)  # Binary ML prediction (1 or 0)
+            honeypot_type = data.get('honeypot_type', 'unknown')
             
-            self.controller.update_classification(source_ip, classification, risk_score)
+            self.controller.update_classification(source_ip, classification, risk_score, ml_prediction)
             
+            response_data = {'status': 'success', 'source_ip': source_ip}
+            if ml_prediction is not None:
+                response_data['ml_prediction_processed'] = ml_prediction
+                
             return Response(content_type='application/json',
-                          body=json.dumps({'status': 'success'}).encode('utf-8'))
+                          body=json.dumps(response_data).encode('utf-8'))
         except Exception as e:
             return Response(content_type='application/json',
                           body=json.dumps({'status': 'error', 'message': str(e)}).encode('utf-8'),

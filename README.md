@@ -13,41 +13,50 @@ A Software Defined Networking (SDN) environment using Mininet and Ryu controller
 ## 🔧 Components
 
 ### Network Topology (`topology/`)
+
 - Tree topology with depth=3
 - 7 OpenFlow switches (s1-s7)
-- 6 hosts: 3 normal servers, 1 triage honeypot, 1 deep honeypot, 1 client
+- 6 hosts: 3 normal servers, 1 triage honeypot, 1 deep honeypot, 1 external source
 
 ### SDN Controller (`controller/`)
-- Ryu-based OpenFlow controller
-- Traffic classification (normal/suspicious/malicious)
+
+- Ryu-based OpenFlow controller with enhanced flow table management
+- Advanced traffic classification (normal/suspicious/malicious)
+- **Solid flow table rules** for precise traffic redirection
 - Load balancing for normal traffic
-- Intelligent redirection to honeypots
-- REST API for honeypot feedback
+- Intelligent redirection to honeypots with bidirectional flows
+- REST API for honeypot feedback and ML integration
 
 ### Services (`servers/`, `honeypots/`)
+
 - **Normal Servers**: Flask web services with valid authentication
-- **Triage Honeypot**: Rejects all credentials, classifies traffic
+- **Triage Honeypot**: Rejects all credentials, uses simulated ML for classification
 - **Deep Honeypot**: Accepts all credentials, elaborate fake environment
 
 ### Machine Learning (`ml_model/`)
-- Traffic behavior analysis
-- Risk scoring and classification
-- Feature extraction from honeypot logs
+
+- **Simulated ML Model**: Returns binary classification (1=malicious, 0=benign)
+- Real-time traffic behavior analysis integrated with triage honeypot
+- Feature extraction from request patterns, usernames, and user agents
+- Consistent IP tracking for reliable classification
 
 ## 🚀 Quick Start
 
 1. **Install Dependencies**
+
    ```bash
    pip install -r requirements.txt
    ```
 
 2. **Start Controller**
+
    ```bash
    source venv/bin/activate
    ryu-manager controller/controller.py --wsapi-port 8080
    ```
 
 3. **Launch Network**
+
    ```bash
    sudo python3 topology/topology.py
    ```
@@ -61,12 +70,14 @@ A Software Defined Networking (SDN) environment using Mininet and Ryu controller
 
 ## 📊 Features
 
-- ✅ Real-time traffic classification
-- ✅ Intelligent honeypot redirection  
-- ✅ Machine learning integration
-- ✅ Comprehensive logging
-- ✅ REST API for monitoring
-- ✅ Load balancing
+- ✅ **Solid Flow Table Rules**: Comprehensive bidirectional redirection flows
+- ✅ Real-time traffic classification with ML integration
+- ✅ **Simulated ML Model**: Binary classification (1 or 0) for triage decisions
+- ✅ Intelligent honeypot redirection with proper flow management
+- ✅ Enhanced topology-aware routing for tree structure
+- ✅ Comprehensive logging and monitoring
+- ✅ REST API for real-time updates
+- ✅ Load balancing with failover capabilities
 - 🔄 Dashboard (in progress)
 
 ## 🛡️ Security Features
@@ -78,14 +89,14 @@ A Software Defined Networking (SDN) environment using Mininet and Ryu controller
 
 ## 📝 Host Configuration
 
-| Host | IP | Port | Type | Description |
-|------|----|----- |------|-------------|
-| h1 | 10.0.0.1 | 8001 | Normal Server | Web service with auth |
-| h2 | 10.0.0.2 | 8002 | Normal Server | Web service with auth |
-| h3 | 10.0.0.3 | 8003 | Normal Server | Web service with auth |
-| h4 | 10.0.0.4 | 8004 | Triage Honeypot | Traffic classifier |
-| h5 | 10.0.0.5 | 8005 | Deep Honeypot | Advanced deception |
-| h6 | 10.0.0.6 | - | Client | Test traffic source |
+| Host | IP       | Port | Type            | Description                |
+| ---- | -------- | ---- | --------------- | -------------------------- |
+| h1   | 10.0.0.1 | 8001 | Normal Server   | Web service with auth      |
+| h2   | 10.0.0.2 | 8002 | Normal Server   | Web service with auth      |
+| h3   | 10.0.0.3 | 8003 | Normal Server   | Web service with auth      |
+| h4   | 10.0.0.4 | 8004 | Triage Honeypot | Traffic classifier         |
+| h5   | 10.0.0.5 | 8005 | Deep Honeypot   | Advanced deception         |
+| h6   | 10.0.0.6 | -    | External Source | Simulates external traffic |
 
 ## 🔄 Traffic Flow
 
@@ -144,4 +155,4 @@ sdnhoney/
 
 ## 📄 License
 
-This project is for educational and research purposes. 
+This project is for educational and research purposes.

@@ -96,13 +96,13 @@ This project aims to create a Software Defined Networking (SDN) environment usin
   - Inspecting traffic using several initial parameters (source IP, request rate, port/protocol, etc.).✅
   - Classifying traffic as `normal` or `suspicious` using basic rule-based checks. ✅
   - If traffic is `normal`: 
-    - Forward it to one of the normal hosts via a load balancing mechanism.
+    - Forward it to one of the normal hosts
   - If traffic is `suspicious`:
     - Redirect it to the Triage Honeypot for deeper inspection. ✅
     - The Triage Honeypot uses an ML model to further classify the request.
       - If the ML model marks it as `normal`: Send back to normal servers.
       - If marked `malicious`: Forward to Deep Honeypot.
----y
+---
 
 ## 8. Logging and Monitoring
 
@@ -170,7 +170,6 @@ project/
 4. Add logic to detect suspicious traffic.
 5. Implement redirection to triage honeypot.
 7. Implement deep honeypot behavior.
-8. Set up external access.
 9. Add logging everywhere.
 10. Build and deploy the monitoring dashboard.
 11. Begin retraining pipeline for ML Model.
