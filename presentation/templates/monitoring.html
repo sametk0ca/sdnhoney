@@ -1,0 +1,460 @@
+{% extends "base.html" %}
+
+{% block title %}Real-time Monitoring - SDN Honeypot Security System{% endblock %}
+
+{% block content %}
+<!-- Monitoring Header -->
+<section class="py-5" style="background: rgba(0,0,0,0.3);">
+    <div class="container">
+        <div class="row text-center">
+            <div class="col-12">
+                <h1 class="display-4 fw-bold mb-3">
+                    <i class="fas fa-chart-line text-primary"></i>
+                    Real-time System Monitoring
+                </h1>
+                <p class="lead">
+                    Live monitoring dashboard with real-time statistics and threat detection
+                </p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- System Status Overview -->
+<section class="py-4" style="background: rgba(0,0,0,0.3);">
+    <div class="container">
+        <div class="row align-items-center">
+            <div class="col-md-6">
+                <h5 class="mb-0">
+                    <span class="status-indicator" id="overall-status"></span>
+                    Overall System Status: <span id="status-text">Checking...</span>
+                </h5>
+                <small class="text-muted">Last updated: <span id="last-update">-</span></small>
+            </div>
+            <div class="col-md-6 text-md-end">
+                <button class="btn btn-sm btn-outline-light" onclick="refreshData()">
+                    <i class="fas fa-sync-alt"></i> Refresh Data
+                </button>
+                <button class="btn btn-sm btn-outline-light" onclick="toggleAutoRefresh()">
+                    <i class="fas fa-play" id="auto-refresh-icon"></i> <span id="auto-refresh-text">Start Auto</span>
+                </button>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Key Metrics -->
+<section class="py-5">
+    <div class="container">
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-number" id="active-ips-count">-</div>
+                <h6>Active IPs</h6>
+                <small>Currently monitored network hosts</small>
+            </div>
+            
+            <div class="stat-card">
+                <div class="stat-number" id="suspicious-count">-</div>
+                <h6>Suspicious IPs</h6>
+                <small>Flagged for potential threats</small>
+            </div>
+            
+            <div class="stat-card">
+                <div class="stat-number" id="malicious-count">-</div>
+                <h6>Malicious IPs</h6>
+                <small>Confirmed threats by ML model</small>
+            </div>
+            
+            <div class="stat-card">
+                <div class="stat-number" id="honeypot-interactions">-</div>
+                <h6>Honeypot Interactions</h6>
+                <small>Total logged attempts</small>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Live Data Tables -->
+<section class="py-5" style="background: rgba(0,0,0,0.2);">
+    <div class="container">
+        <div class="row g-4">
+            <!-- Suspicious IPs -->
+            <div class="col-lg-6">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="mb-0">
+                            <i class="fas fa-exclamation-triangle text-warning"></i>
+                            Suspicious IP Addresses
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div id="suspicious-ips-table">
+                            <div class="text-center py-3">
+                                <i class="fas fa-spinner fa-spin"></i> Loading data...
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Malicious IPs -->
+            <div class="col-lg-6">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="mb-0">
+                            <i class="fas fa-ban text-danger"></i>
+                            Malicious IP Addresses
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div id="malicious-ips-table">
+                            <div class="text-center py-3">
+                                <i class="fas fa-spinner fa-spin"></i> Loading data...
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Component Status -->
+<section class="py-5">
+    <div class="container">
+        <div class="row">
+            <div class="col-12 text-center mb-4">
+                <h2>Component Health Status</h2>
+                <p class="lead">Real-time status of all system components</p>
+            </div>
+        </div>
+        
+        <div class="row g-4">
+            <div class="col-md-3">
+                <div class="card text-center">
+                    <div class="card-body">
+                        <i class="fas fa-microchip fa-3x mb-3" id="controller-icon"></i>
+                        <h6>SDN Controller</h6>
+                        <div class="d-flex align-items-center justify-content-center">
+                            <span class="status-indicator" id="controller-status-indicator"></span>
+                            <span id="controller-status-text">Checking...</span>
+                        </div>
+                        <small class="text-muted">Port 8080</small>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-md-3">
+                <div class="card text-center">
+                    <div class="card-body">
+                        <i class="fas fa-chart-bar fa-3x mb-3" id="dashboard-icon"></i>
+                        <h6>Dashboard</h6>
+                        <div class="d-flex align-items-center justify-content-center">
+                            <span class="status-indicator" id="dashboard-status-indicator"></span>
+                            <span id="dashboard-status-text">Integrated</span>
+                        </div>
+                        <small class="text-muted">Unified Interface</small>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-md-3">
+                <div class="card text-center">
+                    <div class="card-body">
+                        <i class="fas fa-brain fa-3x mb-3" id="ml-icon"></i>
+                        <h6>ML Model</h6>
+                        <div class="d-flex align-items-center justify-content-center">
+                            <span class="status-indicator" id="ml-status-indicator"></span>
+                            <span id="ml-status-text">Checking...</span>
+                        </div>
+                        <small class="text-muted">Binary Classifier</small>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-md-3">
+                <div class="card text-center">
+                    <div class="card-body">
+                        <i class="fas fa-network-wired fa-3x mb-3 text-success"></i>
+                        <h6>Network Topology</h6>
+                        <div class="d-flex align-items-center justify-content-center">
+                            <span class="status-indicator status-active"></span>
+                            <span>Configured</span>
+                        </div>
+                        <small class="text-muted">6 hosts, 7 switches</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Latest Activity -->
+<section class="py-5" style="background: rgba(0,0,0,0.2);">
+    <div class="container">
+        <div class="row">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="mb-0">
+                            <i class="fas fa-clock text-info"></i>
+                            Latest System Activity
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div id="latest-activity">
+                            <div class="text-center py-3">
+                                <i class="fas fa-spinner fa-spin"></i> Loading latest activity...
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- ML Model Testing -->
+<section class="py-5">
+    <div class="container">
+        <div class="row">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="mb-0">
+                            <i class="fas fa-flask text-warning"></i>
+                            ML Model Testing
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <p>Test the machine learning model with different scenarios to see classification results.</p>
+                        <button class="btn btn-warning" onclick="testMLModel()">
+                            <i class="fas fa-play"></i> Run ML Test Scenarios
+                        </button>
+                        <div id="ml-test-results" class="mt-3"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+let autoRefreshInterval = null;
+let isAutoRefreshEnabled = false;
+
+document.addEventListener('DOMContentLoaded', function() {
+    refreshData();
+});
+
+function refreshData() {
+    updateSystemStatus();
+    updateLatestActivity();
+    
+    // Update last refresh time
+    document.getElementById('last-update').textContent = new Date().toLocaleTimeString();
+}
+
+function updateSystemStatus() {
+    fetch('/api/system-status')
+        .then(response => response.json())
+        .then(data => {
+            // Update overall status
+            const overallStatus = document.getElementById('overall-status');
+            const statusText = document.getElementById('status-text');
+            
+            if (data.controller.status === 'ACTIVE') {
+                overallStatus.className = 'status-indicator status-active';
+                statusText.textContent = 'System Online';
+            } else {
+                overallStatus.className = 'status-indicator status-inactive';
+                statusText.textContent = 'System Offline';
+            }
+            
+            // Update key metrics
+            if (data.controller.stats) {
+                document.getElementById('active-ips-count').textContent = data.controller.stats.active_ips || 0;
+                document.getElementById('suspicious-count').textContent = data.controller.stats.suspicious_ips?.length || 0;
+                document.getElementById('malicious-count').textContent = data.controller.stats.malicious_ips?.length || 0;
+                
+                // Update IP tables
+                updateIPTables(data.controller.stats);
+            }
+            
+            // Update honeypot interactions
+            document.getElementById('honeypot-interactions').textContent = data.honeypot_stats?.total_attempts || 0;
+            
+            // Update component status
+            updateComponentStatus(data);
+        })
+        .catch(error => {
+            console.error('Error updating system status:', error);
+            document.getElementById('overall-status').className = 'status-indicator status-inactive';
+            document.getElementById('status-text').textContent = 'Error Loading Data';
+        });
+}
+
+function updateIPTables(stats) {
+    // Suspicious IPs table
+    const suspiciousTable = document.getElementById('suspicious-ips-table');
+    if (stats.suspicious_ips && stats.suspicious_ips.length > 0) {
+        let tableHTML = '<div class="table-responsive"><table class="table table-dark table-striped"><thead><tr><th>IP Address</th><th>First Seen</th><th>Status</th></tr></thead><tbody>';
+        stats.suspicious_ips.forEach(ip => {
+            tableHTML += `<tr><td>${ip}</td><td>Recently</td><td><span class="badge bg-warning">Suspicious</span></td></tr>`;
+        });
+        tableHTML += '</tbody></table></div>';
+        suspiciousTable.innerHTML = tableHTML;
+    } else {
+        suspiciousTable.innerHTML = '<div class="text-center py-3 text-muted">No suspicious IPs detected</div>';
+    }
+    
+    // Malicious IPs table
+    const maliciousTable = document.getElementById('malicious-ips-table');
+    if (stats.malicious_ips && stats.malicious_ips.length > 0) {
+        let tableHTML = '<div class="table-responsive"><table class="table table-dark table-striped"><thead><tr><th>IP Address</th><th>Classification</th><th>Status</th></tr></thead><tbody>';
+        stats.malicious_ips.forEach(ip => {
+            tableHTML += `<tr><td>${ip}</td><td>ML Confirmed</td><td><span class="badge bg-danger">Malicious</span></td></tr>`;
+        });
+        tableHTML += '</tbody></table></div>';
+        maliciousTable.innerHTML = tableHTML;
+    } else {
+        maliciousTable.innerHTML = '<div class="text-center py-3 text-muted">No malicious IPs detected</div>';
+    }
+}
+
+function updateComponentStatus(data) {
+    // Controller status
+    const controllerIndicator = document.getElementById('controller-status-indicator');
+    const controllerText = document.getElementById('controller-status-text');
+    const controllerIcon = document.getElementById('controller-icon');
+    
+    if (data.controller.status === 'ACTIVE') {
+        controllerIndicator.className = 'status-indicator status-active';
+        controllerText.textContent = 'Online';
+        controllerIcon.className = 'fas fa-microchip fa-3x mb-3 text-success';
+    } else {
+        controllerIndicator.className = 'status-indicator status-inactive';
+        controllerText.textContent = 'Offline';
+        controllerIcon.className = 'fas fa-microchip fa-3x mb-3 text-danger';
+    }
+    
+    // Dashboard status - always active since it's integrated
+    const dashboardIndicator = document.getElementById('dashboard-status-indicator');
+    const dashboardText = document.getElementById('dashboard-status-text');
+    const dashboardIcon = document.getElementById('dashboard-icon');
+    
+    dashboardIndicator.className = 'status-indicator status-active';
+    dashboardText.textContent = 'Integrated';
+    dashboardIcon.className = 'fas fa-chart-bar fa-3x mb-3 text-success';
+    
+    // ML Model status
+    const mlIndicator = document.getElementById('ml-status-indicator');
+    const mlText = document.getElementById('ml-status-text');
+    const mlIcon = document.getElementById('ml-icon');
+    
+    if (data.ml_model.status === 'OPERATIONAL') {
+        mlIndicator.className = 'status-indicator status-active';
+        mlText.textContent = 'Operational';
+        mlIcon.className = 'fas fa-brain fa-3x mb-3 text-success';
+    } else {
+        mlIndicator.className = 'status-indicator status-inactive';
+        mlText.textContent = 'Inactive';
+        mlIcon.className = 'fas fa-brain fa-3x mb-3 text-danger';
+    }
+}
+
+function updateLatestActivity() {
+    fetch('/api/system-status')
+        .then(response => response.json())
+        .then(data => {
+            const activityDiv = document.getElementById('latest-activity');
+            
+            if (data.latest_activity) {
+                const activity = data.latest_activity;
+                activityDiv.innerHTML = `
+                    <div class="row">
+                        <div class="col-md-6">
+                            <strong>Latest Request:</strong><br>
+                            <span class="text-info">${activity.source_ip}</span> → 
+                            <span class="text-warning">${activity.request_type}</span><br>
+                            <small class="text-muted">Time: ${activity.timestamp}</small>
+                        </div>
+                        <div class="col-md-6">
+                            <strong>ML Analysis Result:</strong><br>
+                            Prediction: <span class="badge ${activity.ml_prediction == 1 ? 'bg-danger' : 'bg-success'}">${activity.ml_prediction == 1 ? 'Malicious' : 'Benign'}</span><br>
+                            Risk Score: <span class="text-warning">${activity.risk_score}</span>
+                        </div>
+                    </div>
+                `;
+            } else {
+                activityDiv.innerHTML = '<div class="text-center py-3 text-muted">No recent activity detected</div>';
+            }
+        })
+        .catch(error => {
+            console.error('Error updating latest activity:', error);
+            document.getElementById('latest-activity').innerHTML = '<div class="text-center py-3 text-danger">Error loading activity data</div>';
+        });
+}
+
+function toggleAutoRefresh() {
+    const icon = document.getElementById('auto-refresh-icon');
+    const text = document.getElementById('auto-refresh-text');
+    
+    if (isAutoRefreshEnabled) {
+        // Stop auto refresh
+        clearInterval(autoRefreshInterval);
+        isAutoRefreshEnabled = false;
+        icon.className = 'fas fa-play';
+        text.textContent = 'Start Auto';
+    } else {
+        // Start auto refresh
+        autoRefreshInterval = setInterval(refreshData, 10000); // Every 10 seconds
+        isAutoRefreshEnabled = true;
+        icon.className = 'fas fa-pause';
+        text.textContent = 'Stop Auto';
+    }
+}
+
+function testMLModel() {
+    const button = event.target;
+    const resultsDiv = document.getElementById('ml-test-results');
+    
+    button.disabled = true;
+    button.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Running Tests...';
+    
+    fetch('/api/ml-test')
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                let resultsHTML = '<h6 class="mt-3">Test Results:</h6><div class="table-responsive"><table class="table table-dark table-striped"><thead><tr><th>Scenario</th><th>Risk Score</th><th>Prediction</th><th>Classification</th></tr></thead><tbody>';
+                
+                data.results.forEach(result => {
+                    const badgeClass = result.prediction === 1 ? 'bg-danger' : 'bg-success';
+                    resultsHTML += `
+                        <tr>
+                            <td>${result.scenario}</td>
+                            <td>${result.risk_score}</td>
+                            <td>${result.prediction}</td>
+                            <td><span class="badge ${badgeClass}">${result.classification}</span></td>
+                        </tr>
+                    `;
+                });
+                
+                resultsHTML += '</tbody></table></div>';
+                resultsDiv.innerHTML = resultsHTML;
+            } else {
+                resultsDiv.innerHTML = `<div class="alert alert-danger">Error: ${data.error}</div>`;
+            }
+        })
+        .catch(error => {
+            resultsDiv.innerHTML = `<div class="alert alert-danger">Error running ML tests: ${error.message}</div>`;
+        })
+        .finally(() => {
+            button.disabled = false;
+            button.innerHTML = '<i class="fas fa-play"></i> Run ML Test Scenarios';
+        });
+}
+</script>
+{% endblock %} 

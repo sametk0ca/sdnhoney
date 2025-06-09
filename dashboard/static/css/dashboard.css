@@ -96,11 +96,11 @@ body {
 /* Topology Panel */
 .topology-panel {
     grid-area: topology;
-    min-height: 400px;
+    min-height: 500px;
 }
 
 #topology-container {
-    height: 350px;
+    height: 450px;
     position: relative;
     border: 1px solid rgba(255, 255, 255, 0.1);
     border-radius: 8px;
@@ -288,10 +288,13 @@ body {
 }
 
 .logs-list {
-    max-height: 200px;
+    max-height: 300px;
     overflow-y: auto;
     font-family: 'Courier New', monospace;
     font-size: 0.8rem;
+    background: rgba(0, 0, 0, 0.2);
+    border-radius: 6px;
+    padding: 0.5rem;
 }
 
 .log-entry {

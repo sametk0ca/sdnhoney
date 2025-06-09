@@ -1,0 +1,474 @@
+{% extends "base.html" %}
+
+{% block title %}Live Demo - SDN Honeypot Security System{% endblock %}
+
+{% block content %}
+<!-- Demo Header -->
+<section class="py-5" style="background: rgba(0,0,0,0.3);">
+    <div class="container">
+        <div class="row text-center">
+            <div class="col-12">
+                <h1 class="display-4 fw-bold mb-3">
+                    <i class="fas fa-play-circle text-primary"></i>
+                    Interactive System Demo
+                </h1>
+                <p class="lead">
+                    Experience the SDN Honeypot system in action with live commands and real-time responses
+                </p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Demo Interface -->
+<section class="py-5">
+    <div class="container">
+        <div class="row">
+            <!-- Command Categories -->
+            <div class="col-md-4 mb-4">
+                <div class="card h-100">
+                    <div class="card-header">
+                        <h5 class="mb-0">
+                            <i class="fas fa-list"></i> Demo Commands
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div id="command-categories">
+                            <!-- Command categories will be loaded here -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Terminal -->
+            <div class="col-md-8">
+                <div class="card">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0">
+                            <i class="fas fa-terminal"></i> System Terminal
+                        </h5>
+                        <div>
+                            <button class="btn btn-sm btn-outline-light" onclick="clearTerminal()">
+                                <i class="fas fa-trash"></i> Clear
+                            </button>
+                            <button class="btn btn-sm btn-outline-light" onclick="systemCheck()">
+                                <i class="fas fa-heartbeat"></i> System Check
+                            </button>
+                        </div>
+                    </div>
+                    <div class="card-body p-0">
+                        <div class="terminal" id="terminal">
+                            <div class="terminal-output" id="terminal-output">
+Welcome to SDN Honeypot Security System Demo
+============================================
+System Status: <span id="terminal-status">Checking...</span>
+
+💡 This is a command reference tool. Copy commands and run them in your actual terminal.
+📋 Click commands from the sidebar to see usage examples.
+
+                            </div>
+                            <div class="d-flex">
+                                <span style="color: #00ff00;">📋 Command Reference: </span>
+                                <span style="color: #ffff00; font-style: italic;">Click commands from sidebar to copy them</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Demo Instructions -->
+<section class="py-5" style="background: rgba(0,0,0,0.2);">
+    <div class="container">
+        <div class="row">
+            <div class="col-12">
+                <h2 class="text-center mb-5">Demo Instructions</h2>
+            </div>
+        </div>
+        
+        <div class="row g-4">
+            <div class="col-md-4">
+                <div class="card h-100">
+                    <div class="card-body text-center">
+                        <i class="fas fa-mouse-pointer fa-3x text-primary mb-3"></i>
+                        <h5>Click Commands</h5>
+                        <p>Select pre-configured commands from the sidebar to see different attack scenarios and system responses.</p>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-md-4">
+                <div class="card h-100">
+                    <div class="card-body text-center">
+                        <i class="fas fa-keyboard fa-3x text-success mb-3"></i>
+                        <h5>Type Commands</h5>
+                        <p>Manually type commands in the terminal for custom testing. All Mininet CLI commands are supported.</p>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-md-4">
+                <div class="card h-100">
+                    <div class="card-body text-center">
+                        <i class="fas fa-chart-line fa-3x text-warning mb-3"></i>
+                        <h5>Monitor Responses</h5>
+                        <p>Watch real-time responses and observe how the system classifies and redirects traffic intelligently.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Live System Monitoring -->
+<section class="py-5">
+    <div class="container">
+        <div class="row">
+            <div class="col-12 text-center mb-4">
+                <h2>Live System Monitoring</h2>
+                <p class="lead">Real-time system statistics and activity</p>
+            </div>
+        </div>
+        
+        <div class="row g-4">
+            <div class="col-md-3">
+                <div class="stat-card">
+                    <div class="stat-number" id="demo-active-ips">-</div>
+                    <h6>Active IPs</h6>
+                    <small>Monitored hosts</small>
+                </div>
+            </div>
+            
+            <div class="col-md-3">
+                <div class="stat-card">
+                    <div class="stat-number" id="demo-suspicious">-</div>
+                    <h6>Suspicious</h6>
+                    <small>Flagged traffic</small>
+                </div>
+            </div>
+            
+            <div class="col-md-3">
+                <div class="stat-card">
+                    <div class="stat-number" id="demo-malicious">-</div>
+                    <h6>Malicious</h6>
+                    <small>Confirmed threats</small>
+                </div>
+            </div>
+            
+            <div class="col-md-3">
+                <div class="stat-card">
+                    <div class="stat-number" id="demo-commands">0</div>
+                    <h6>Commands Run</h6>
+                    <small>This session</small>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Attack Scenarios -->
+<section class="py-5" style="background: rgba(0,0,0,0.2);">
+    <div class="container">
+        <div class="row">
+            <div class="col-12 text-center mb-5">
+                <h2>Recommended Demo Flow</h2>
+                <p class="lead">Follow this sequence to demonstrate all system capabilities</p>
+            </div>
+        </div>
+        
+        <div class="row g-4">
+            <div class="col-md-6">
+                <div class="card h-100">
+                    <div class="card-header">
+                        <h5 class="mb-0">
+                            <span class="badge bg-primary me-2">1</span>
+                            System Setup & Verification
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <ol class="list-group list-group-flush">
+                            <li class="list-group-item bg-transparent text-light border-secondary">Check system status and connectivity</li>
+                            <li class="list-group-item bg-transparent text-light border-secondary">Verify all hosts are reachable</li>
+                            <li class="list-group-item bg-transparent text-light border-secondary">Query controller statistics</li>
+                        </ol>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-md-6">
+                <div class="card h-100">
+                    <div class="card-header">
+                        <h5 class="mb-0">
+                            <span class="badge bg-success me-2">2</span>
+                            Normal Traffic Testing
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <ol class="list-group list-group-flush">
+                            <li class="list-group-item bg-transparent text-light border-secondary">Access normal servers with valid requests</li>
+                            <li class="list-group-item bg-transparent text-light border-secondary">Observe legitimate traffic routing</li>
+                            <li class="list-group-item bg-transparent text-light border-secondary">Verify no honeypot redirection</li>
+                        </ol>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-md-6">
+                <div class="card h-100">
+                    <div class="card-header">
+                        <h5 class="mb-0">
+                            <span class="badge bg-warning me-2">3</span>
+                            Suspicious Activity
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <ol class="list-group list-group-flush">
+                            <li class="list-group-item bg-transparent text-light border-secondary">Trigger suspicious behavior patterns</li>
+                            <li class="list-group-item bg-transparent text-light border-secondary">Watch triage honeypot activation</li>
+                            <li class="list-group-item bg-transparent text-light border-secondary">Observe ML model analysis</li>
+                        </ol>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-md-6">
+                <div class="card h-100">
+                    <div class="card-header">
+                        <h5 class="mb-0">
+                            <span class="badge bg-danger me-2">4</span>
+                            Malicious Classification
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <ol class="list-group list-group-flush">
+                            <li class="list-group-item bg-transparent text-light border-secondary">Execute high-risk attack patterns</li>
+                            <li class="list-group-item bg-transparent text-light border-secondary">Trigger malicious classification</li>
+                            <li class="list-group-item bg-transparent text-light border-secondary">See deep honeypot redirection</li>
+                        </ol>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+let commandCount = 0;
+
+document.addEventListener('DOMContentLoaded', function() {
+    loadCommandCategories();
+    updateDemoStats();
+    
+    // Setup terminal input
+    const terminalInput = document.getElementById('terminal-input');
+    terminalInput.addEventListener('keypress', function(e) {
+        if (e.key === 'Enter') {
+            executeCommand(terminalInput.value);
+            terminalInput.value = '';
+        }
+    });
+    
+    // Auto-focus terminal input
+    terminalInput.focus();
+    
+    // Update stats every 10 seconds
+    setInterval(updateDemoStats, 10000);
+});
+
+function loadCommandCategories() {
+    fetch('/api/demo-commands')
+        .then(response => response.json())
+        .then(data => {
+            const container = document.getElementById('command-categories');
+            container.innerHTML = '';
+            
+            Object.entries(data.categories).forEach(([key, category]) => {
+                const categoryDiv = document.createElement('div');
+                categoryDiv.className = 'mb-4';
+                
+                categoryDiv.innerHTML = `
+                    <h6 class="mb-3">
+                        <i class="fas fa-folder"></i> ${category.name}
+                    </h6>
+                    <div class="list-group list-group-flush">
+                        ${category.commands.map(cmd => `
+                            <div class="list-group-item bg-dark text-light border-secondary">
+                                <div class="d-flex w-100 justify-content-between align-items-start">
+                                    <div class="flex-grow-1">
+                                        <h6 class="mb-1">${cmd.name}</h6>
+                                        <p class="mb-1 text-muted">${cmd.description}</p>
+                                        <small class="text-info">${cmd.expected || ''}</small>
+                                    </div>
+                                    <button class="btn btn-sm btn-outline-primary ms-2" 
+                                            onclick="copyCommand('${cmd.command.replace(/'/g, "\\'")}')">
+                                        <i class="fas fa-copy"></i> Copy
+                                    </button>
+                                </div>
+                                <div class="mt-2">
+                                    <code class="text-warning" style="word-break: break-all;">${cmd.command}</code>
+                                </div>
+                            </div>
+                        `).join('')}
+                    </div>
+                `;
+                
+                container.appendChild(categoryDiv);
+            });
+        })
+        .catch(error => {
+            console.error('Error loading commands:', error);
+            document.getElementById('command-categories').innerHTML = 
+                '<div class="alert alert-danger">Failed to load commands</div>';
+        });
+}
+
+function executeCommand(command) {
+    if (!command.trim()) return;
+    
+    const terminal = document.getElementById('terminal');
+    
+    // Add command to terminal
+    const commandDiv = document.createElement('div');
+    commandDiv.className = 'terminal-output';
+    commandDiv.innerHTML = `<span style="color: #3498db;">mininet@sdn-honeypot:~$ ${command}</span>`;
+    
+    // Add loading indicator
+    const loadingDiv = document.createElement('div');
+    loadingDiv.className = 'terminal-output';
+    loadingDiv.innerHTML = '<span style="color: #f39c12;">Executing command...</span>';
+    
+    terminal.insertBefore(commandDiv, terminal.lastElementChild);
+    terminal.insertBefore(loadingDiv, terminal.lastElementChild);
+    
+    // Scroll to bottom
+    terminal.scrollTop = terminal.scrollHeight;
+    
+    // Execute command via API
+    fetch('/api/execute-command', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ command: command })
+    })
+    .then(response => response.json())
+    .then(data => {
+        // Remove loading indicator
+        terminal.removeChild(loadingDiv);
+        
+        // Add response
+        const responseDiv = document.createElement('div');
+        responseDiv.className = 'terminal-output';
+        responseDiv.innerHTML = `<pre style="color: #00ff00; margin: 0;">${data.output}</pre>`;
+        
+        terminal.insertBefore(responseDiv, terminal.lastElementChild);
+        
+        // Update command count
+        commandCount++;
+        document.getElementById('demo-commands').textContent = commandCount;
+        
+        // Update stats after certain commands
+        if (command.includes('curl') || command.includes('pingall')) {
+            setTimeout(updateDemoStats, 2000);
+        }
+    })
+    .catch(error => {
+        // Remove loading indicator
+        terminal.removeChild(loadingDiv);
+        
+        // Add error
+        const errorDiv = document.createElement('div');
+        errorDiv.className = 'terminal-output';
+        errorDiv.innerHTML = `<span style="color: #e74c3c;">Error: ${error.message}</span>`;
+        
+        terminal.insertBefore(errorDiv, terminal.lastElementChild);
+    })
+    .finally(() => {
+        // Scroll to bottom
+        terminal.scrollTop = terminal.scrollHeight;
+    });
+}
+
+function clearTerminal() {
+    const terminal = document.getElementById('terminal');
+    const outputs = terminal.querySelectorAll('.terminal-output');
+    
+    // Keep only the welcome message
+    outputs.forEach((output, index) => {
+        if (index > 0) {
+            output.remove();
+        }
+    });
+    
+    document.getElementById('terminal-input').focus();
+}
+
+function systemCheck() {
+    executeCommand('curl -s http://localhost:8080/api/stats | python3 -m json.tool');
+}
+
+function copyCommand(command) {
+    navigator.clipboard.writeText(command).then(function() {
+        // Show copy success feedback
+        const terminalOutput = document.getElementById('terminal-output');
+        const copyDiv = document.createElement('div');
+        copyDiv.className = 'terminal-output';
+        copyDiv.innerHTML = `<span style="color: #27ae60;">✓ Command copied to clipboard: </span><span style="color: #3498db;">${command}</span>`;
+        
+        const terminal = document.getElementById('terminal');
+        terminal.insertBefore(copyDiv, terminal.lastElementChild);
+        terminal.scrollTop = terminal.scrollHeight;
+        
+        // Remove after 3 seconds
+        setTimeout(() => {
+            if (copyDiv.parentNode) {
+                copyDiv.parentNode.removeChild(copyDiv);
+            }
+        }, 3000);
+    }).catch(function(err) {
+        console.error('Could not copy command: ', err);
+        // Fallback: show command in terminal
+        const terminalOutput = document.getElementById('terminal-output');
+        const cmdDiv = document.createElement('div');
+        cmdDiv.className = 'terminal-output';
+        cmdDiv.innerHTML = `<span style="color: #f39c12;">Command: </span><span style="color: #3498db;">${command}</span>`;
+        
+        const terminal = document.getElementById('terminal');
+        terminal.insertBefore(cmdDiv, terminal.lastElementChild);
+        terminal.scrollTop = terminal.scrollHeight;
+    });
+}
+
+function updateDemoStats() {
+    fetch('/api/system-status')
+        .then(response => response.json())
+        .then(data => {
+            // Update system status in terminal
+            const statusSpan = document.getElementById('terminal-status');
+            if (statusSpan) {
+                statusSpan.innerHTML = data.controller.status === 'ACTIVE' ? 
+                    '<span style="color: #27ae60;">ONLINE</span>' : 
+                    '<span style="color: #e74c3c;">OFFLINE</span>';
+            }
+            
+            // Update demo stats
+            if (data.controller.stats) {
+                document.getElementById('demo-active-ips').textContent = data.controller.stats.active_ips || 0;
+                document.getElementById('demo-suspicious').textContent = data.controller.stats.suspicious_ips?.length || 0;
+                document.getElementById('demo-malicious').textContent = data.controller.stats.malicious_ips?.length || 0;
+            }
+        })
+        .catch(error => {
+            console.error('Error updating demo stats:', error);
+            const statusSpan = document.getElementById('terminal-status');
+            if (statusSpan) {
+                statusSpan.innerHTML = '<span style="color: #f39c12;">UNKNOWN</span>';
+            }
+        });
+}
+</script>
+{% endblock %} 

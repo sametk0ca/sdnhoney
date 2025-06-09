@@ -171,6 +171,9 @@ def login():
                    'ml_prediction': ml_prediction
                })
     
+    # Send results to controller for GET requests too
+    send_to_controller(classification, client_ip, risk_score, ml_prediction)
+    
     return render_template_string(LOGIN_TEMPLATE)
 
 @app.route('/admin')

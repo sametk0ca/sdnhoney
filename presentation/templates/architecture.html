@@ -1,0 +1,413 @@
+{% extends "base.html" %}
+
+{% block title %}System Architecture - SDN Honeypot Security System{% endblock %}
+
+{% block content %}
+<!-- Architecture Header -->
+<section class="py-5" style="background: rgba(0,0,0,0.3);">
+    <div class="container">
+        <div class="row text-center">
+            <div class="col-12">
+                <h1 class="display-4 fw-bold mb-3">
+                    <i class="fas fa-sitemap text-primary"></i>
+                    System Architecture
+                </h1>
+                <p class="lead">
+                    Comprehensive overview of the SDN Honeypot system design and traffic flow
+                </p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Main Architecture Diagram -->
+<section class="py-5">
+    <div class="container">
+        <div class="architecture-diagram">
+            <h2 class="text-center mb-4">Complete System Architecture</h2>
+            
+            <!-- Network Topology -->
+            <div class="row mb-5">
+                <!-- External Client -->
+                <div class="col-md-2 text-center">
+                    <div class="component-box">
+                        <i class="fas fa-laptop fa-3x mb-3" style="color: #3498db;"></i>
+                        <h6>External Client</h6>
+                        <small>h6 (10.0.0.6)</small>
+                        <div class="mt-2">
+                            <span class="badge bg-info">Source</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- SDN Controller -->
+                <div class="col-md-2 text-center">
+                    <div class="component-box">
+                        <i class="fas fa-microchip fa-3x mb-3" style="color: #e74c3c;"></i>
+                        <h6>SDN Controller</h6>
+                        <small>Ryu (Port 8080)</small>
+                        <div class="mt-2">
+                            <span class="badge bg-danger">Control</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Normal Servers -->
+                <div class="col-md-2 text-center">
+                    <div class="component-box" style="border-color: #27ae60;">
+                        <i class="fas fa-server fa-3x mb-3" style="color: #27ae60;"></i>
+                        <h6>Normal Servers</h6>
+                        <small>h1, h2, h3</small>
+                        <div class="mt-2">
+                            <span class="badge bg-success">Legitimate</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Triage Honeypot -->
+                <div class="col-md-2 text-center">
+                    <div class="component-box" style="border-color: #f39c12;">
+                        <i class="fas fa-filter fa-3x mb-3" style="color: #f39c12;"></i>
+                        <h6>Triage Honeypot</h6>
+                        <small>h4 (ML Analysis)</small>
+                        <div class="mt-2">
+                            <span class="badge bg-warning">Triage</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Deep Honeypot -->
+                <div class="col-md-2 text-center">
+                    <div class="component-box" style="border-color: #e74c3c;">
+                        <i class="fas fa-bug fa-3x mb-3" style="color: #e74c3c;"></i>
+                        <h6>Deep Honeypot</h6>
+                        <small>h5 (Deception)</small>
+                        <div class="mt-2">
+                            <span class="badge bg-danger">Deep</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- ML Model -->
+                <div class="col-md-2 text-center">
+                    <div class="component-box" style="border-color: #9b59b6;">
+                        <i class="fas fa-brain fa-3x mb-3" style="color: #9b59b6;"></i>
+                        <h6>ML Model</h6>
+                        <small>Classification Engine</small>
+                        <div class="mt-2">
+                            <span class="badge bg-primary">AI</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Traffic Flow Process -->
+<section class="py-5" style="background: rgba(0,0,0,0.2);">
+    <div class="container">
+        <div class="row">
+            <div class="col-12 text-center mb-5">
+                <h2>Traffic Classification Flow</h2>
+                <p class="lead">Step-by-step process of how traffic is analyzed and routed</p>
+            </div>
+        </div>
+        
+        <div class="row g-4">
+            <div class="col-md-4">
+                <div class="card h-100">
+                    <div class="card-header text-center">
+                        <span class="badge bg-primary fs-5 me-2">1</span>
+                        <h5 class="d-inline">Initial Request</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="text-center mb-3">
+                            <i class="fas fa-paper-plane fa-3x text-primary"></i>
+                        </div>
+                        <ul>
+                            <li>External client sends HTTP request</li>
+                            <li>Request intercepted by SDN controller</li>
+                            <li>Source IP analysis begins</li>
+                            <li>Request patterns examined</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-md-4">
+                <div class="card h-100">
+                    <div class="card-header text-center">
+                        <span class="badge bg-success fs-5 me-2">2</span>
+                        <h5 class="d-inline">Classification</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="text-center mb-3">
+                            <i class="fas fa-code-branch fa-3x text-success"></i>
+                        </div>
+                        <ul>
+                            <li><strong>Normal:</strong> Route to legitimate servers</li>
+                            <li><strong>Suspicious:</strong> Redirect to triage honeypot</li>
+                            <li><strong>Malicious:</strong> Send to deep honeypot</li>
+                            <li>Dynamic flow rules installed</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-md-4">
+                <div class="card h-100">
+                    <div class="card-header text-center">
+                        <span class="badge bg-warning fs-5 me-2">3</span>
+                        <h5 class="d-inline">ML Analysis</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="text-center mb-3">
+                            <i class="fas fa-brain fa-3x text-warning"></i>
+                        </div>
+                        <ul>
+                            <li>Triage honeypot captures data</li>
+                            <li>ML model analyzes behavior</li>
+                            <li>Risk score calculated (0-1)</li>
+                            <li>Binary decision sent to controller</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Network Topology Details -->
+<section class="py-5">
+    <div class="container">
+        <div class="row">
+            <div class="col-12 text-center mb-5">
+                <h2>Network Topology Structure</h2>
+                <p class="lead">Mininet tree topology with OpenFlow switches</p>
+            </div>
+        </div>
+        
+        <div class="row">
+            <div class="col-lg-6">
+                <div class="card h-100">
+                    <div class="card-header">
+                        <h5><i class="fas fa-network-wired"></i> Physical Layout</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="code-block">
+                            <pre>
+Controller (Ryu)
+        |
+   Root Switch (s1)
+        |
+    +---+---+
+    |       |
+   s2       s3
+    |       |
+  +---+   +---+
+  |   |   |   |
+ s4  s5  s6  s7
+  |   |   |   |
+ h1  h2  h3  h4,h5,h6
+                            </pre>
+                        </div>
+                        <h6>Switch Configuration:</h6>
+                        <ul>
+                            <li>7 OpenFlow switches (s1-s7)</li>
+                            <li>Tree depth: 3 levels</li>
+                            <li>OpenFlow version: 1.3</li>
+                            <li>Remote controller connection</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-lg-6">
+                <div class="card h-100">
+                    <div class="card-header">
+                        <h5><i class="fas fa-server"></i> Host Assignments</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row g-3">
+                            <div class="col-6">
+                                <div class="component-box" style="border-color: #27ae60;">
+                                    <strong>h1</strong><br>
+                                    10.0.0.1:8001<br>
+                                    <small>Normal Server 1</small>
+                                </div>
+                            </div>
+                            <div class="col-6">
+                                <div class="component-box" style="border-color: #27ae60;">
+                                    <strong>h2</strong><br>
+                                    10.0.0.2:8002<br>
+                                    <small>Normal Server 2</small>
+                                </div>
+                            </div>
+                            <div class="col-6">
+                                <div class="component-box" style="border-color: #27ae60;">
+                                    <strong>h3</strong><br>
+                                    10.0.0.3:8003<br>
+                                    <small>Normal Server 3</small>
+                                </div>
+                            </div>
+                            <div class="col-6">
+                                <div class="component-box" style="border-color: #f39c12;">
+                                    <strong>h4</strong><br>
+                                    10.0.0.4:8004<br>
+                                    <small>Triage Honeypot</small>
+                                </div>
+                            </div>
+                            <div class="col-6">
+                                <div class="component-box" style="border-color: #e74c3c;">
+                                    <strong>h5</strong><br>
+                                    10.0.0.5:8005<br>
+                                    <small>Deep Honeypot</small>
+                                </div>
+                            </div>
+                            <div class="col-6">
+                                <div class="component-box" style="border-color: #3498db;">
+                                    <strong>h6</strong><br>
+                                    10.0.0.6<br>
+                                    <small>External Client</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- ML Model Architecture -->
+<section class="py-5" style="background: rgba(0,0,0,0.2);">
+    <div class="container">
+        <div class="row">
+            <div class="col-12 text-center mb-5">
+                <h2>Machine Learning Model Architecture</h2>
+                <p class="lead">Behavioral analysis and risk assessment system</p>
+            </div>
+        </div>
+        
+        <div class="row g-4">
+            <div class="col-lg-4">
+                <div class="card h-100">
+                    <div class="card-header">
+                        <h5><i class="fas fa-input-text"></i> Input Features</h5>
+                    </div>
+                    <div class="card-body">
+                        <ul>
+                            <li><strong>Request Frequency:</strong> Requests per time window</li>
+                            <li><strong>Username Analysis:</strong> Suspicious name patterns</li>
+                            <li><strong>User-Agent:</strong> Bot/scanner detection</li>
+                            <li><strong>Source IP:</strong> Historical behavior</li>
+                            <li><strong>Request Timing:</strong> Rapid-fire detection</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-lg-4">
+                <div class="card h-100">
+                    <div class="card-header">
+                        <h5><i class="fas fa-calculator"></i> Risk Calculation</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="code-block">
+                            <strong>Risk Score Formula:</strong><br>
+                            Base = 0.2<br>
+                            + Frequency bonus (0.2-0.4)<br>
+                            + Username penalty (0.3)<br>
+                            + User-agent penalty (0.2)<br>
+                            + Rapid-fire penalty (0.3)<br>
+                            ± Random factor (0.1)
+                        </div>
+                        <p class="mt-3"><strong>Threshold:</strong> 0.6</p>
+                        <p>Score ≥ 0.6 → Malicious (1)<br>
+                           Score < 0.6 → Benign (0)</p>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-lg-4">
+                <div class="card h-100">
+                    <div class="card-header">
+                        <h5><i class="fas fa-output"></i> Classification Output</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="text-center mb-3">
+                            <div class="component-box" style="border-color: #27ae60; margin: 10px;">
+                                <strong>0 - Benign</strong><br>
+                                <small>Continue monitoring</small>
+                            </div>
+                            <div class="component-box" style="border-color: #e74c3c; margin: 10px;">
+                                <strong>1 - Malicious</strong><br>
+                                <small>Redirect to deep honeypot</small>
+                            </div>
+                        </div>
+                        <p>Result sent to SDN controller for immediate flow rule update.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Security Features -->
+<section class="py-5">
+    <div class="container">
+        <div class="row">
+            <div class="col-12 text-center mb-5">
+                <h2>Security Features & Benefits</h2>
+                <p class="lead">Advanced protection mechanisms built into the system</p>
+            </div>
+        </div>
+        
+        <div class="row g-4">
+            <div class="col-md-6">
+                <div class="card h-100">
+                    <div class="card-header">
+                        <h5><i class="fas fa-shield-alt text-success"></i> Proactive Defense</h5>
+                    </div>
+                    <div class="card-body">
+                        <ul>
+                            <li>Real-time threat detection</li>
+                            <li>Automatic traffic redirection</li>
+                            <li>Dynamic security policy enforcement</li>
+                            <li>Zero-day attack mitigation</li>
+                            <li>Scalable defense mechanisms</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-md-6">
+                <div class="card h-100">
+                    <div class="card-header">
+                        <h5><i class="fas fa-spy text-warning"></i> Deception Tactics</h5>
+                    </div>
+                    <div class="card-body">
+                        <ul>
+                            <li>Multi-layered honeypot architecture</li>
+                            <li>Attacker behavior analysis</li>
+                            <li>Prolonged engagement strategies</li>
+                            <li>Intelligence gathering capabilities</li>
+                            <li>Attack pattern recognition</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Add some interactive elements or animations here if needed
+    console.log('Architecture page loaded');
+});
+</script>
+{% endblock %} 

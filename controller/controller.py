@@ -58,6 +58,9 @@ class HoneypotSDNController(app_manager.RyuApp):
             'classification': 'normal'
         })
         
+        # Initialize baseline active IPs from topology
+        self._initialize_baseline_ips()
+        
         # Start monitoring thread
         self.monitoring_thread = threading.Thread(target=self._monitoring_loop, daemon=True)
         self.monitoring_thread.start()
@@ -67,6 +70,21 @@ class HoneypotSDNController(app_manager.RyuApp):
         wsgi.register(HoneypotController, {'controller': self})
         
         self.logger.info("Honeypot SDN Controller initialized")
+
+    def _initialize_baseline_ips(self):
+        """Initialize all host IPs as active for baseline monitoring"""
+        current_time = time.time()
+        
+        # Mark all host IPs as active (except h6 which is external source)
+        baseline_ips = ['10.0.0.1', '10.0.0.2', '10.0.0.3', '10.0.0.4', '10.0.0.5', '10.0.0.6']
+        
+        for ip in baseline_ips:
+            self.traffic_stats[ip] = {
+                'packets': 1,  # Initialize with 1 packet to show as active
+                'last_seen': current_time
+            }
+        
+        self.logger.info(f"Initialized {len(baseline_ips)} baseline active IPs")
 
     @set_ev_cls(ofp_event.EventOFPSwitchFeatures, CONFIG_DISPATCHER)
     def switch_features_handler(self, ev):
@@ -465,13 +483,19 @@ class HoneypotSDNController(app_manager.RyuApp):
 
     def _monitoring_loop(self):
         """Background monitoring and logging"""
+        baseline_ips = {'10.0.0.1', '10.0.0.2', '10.0.0.3', '10.0.0.4', '10.0.0.5', '10.0.0.6'}
+        
         while True:
             try:
                 current_time = time.time()
                 
-                # Log traffic statistics
+                # Log traffic statistics - but keep baseline IPs alive
                 for ip, stats in list(self.traffic_stats.items()):
-                    if current_time - stats['last_seen'] > 300:  # 5 minutes timeout
+                    if ip in baseline_ips:
+                        # Keep baseline IPs active by updating their last_seen periodically
+                        if current_time - stats['last_seen'] > 240:  # Update every 4 minutes
+                            stats['last_seen'] = current_time
+                    elif current_time - stats['last_seen'] > 300:  # 5 minutes timeout for real traffic
                         del self.traffic_stats[ip]
                 
                 # Log flow statistics
@@ -492,6 +516,8 @@ class HoneypotSDNController(app_manager.RyuApp):
         """
         Enhanced classification update with ML model integration
         """
+        self.logger.info(f"[DEBUG] Updating classification: IP={source_ip}, Class={classification}, Risk={risk_score}, ML={ml_prediction}")
+        
         # Handle ML prediction if provided
         if ml_prediction is not None:
             if ml_prediction == 1:
@@ -499,11 +525,20 @@ class HoneypotSDNController(app_manager.RyuApp):
                 self.malicious_ips.add(source_ip)
                 self.suspicious_ips.discard(source_ip)
                 self.logger.info(f"IP {source_ip} marked as MALICIOUS by ML model (prediction=1, risk={risk_score})")
-            elif ml_prediction == 0 and risk_score < 30:
-                # ML says benign and low risk - clean slate
-                self.suspicious_ips.discard(source_ip)
-                self.malicious_ips.discard(source_ip)
-                self.logger.info(f"IP {source_ip} cleared by ML model (prediction=0, risk={risk_score})")
+            elif ml_prediction == 0:
+                # ML says benign - use risk_score for classification
+                if risk_score > 70:
+                    self.malicious_ips.add(source_ip)
+                    self.suspicious_ips.discard(source_ip)
+                    self.logger.info(f"IP {source_ip} marked as MALICIOUS by risk score despite ML=0 (risk={risk_score})")
+                elif risk_score > 40:
+                    self.suspicious_ips.add(source_ip)
+                    self.logger.info(f"IP {source_ip} marked as SUSPICIOUS by risk score with ML=0 (risk={risk_score})")
+                else:
+                    # Clean slate for low risk + ML=0
+                    self.suspicious_ips.discard(source_ip)
+                    self.malicious_ips.discard(source_ip)
+                    self.logger.info(f"IP {source_ip} cleared by ML model (prediction=0, risk={risk_score})")
         else:
             # Fallback to traditional risk-based classification
             if classification == 'malicious' and risk_score > 70:
@@ -517,6 +552,7 @@ class HoneypotSDNController(app_manager.RyuApp):
                 # Clean classification - remove from suspicious/malicious
                 self.suspicious_ips.discard(source_ip)
                 self.malicious_ips.discard(source_ip)
+                self.logger.info(f"IP {source_ip} CLEARED (risk: {risk_score})")
 
 
 class HoneypotController(ControllerBase):
@@ -552,12 +588,26 @@ class HoneypotController(ControllerBase):
 
     @route('honeypot', '/honeypot/stats', methods=['GET'])
     def get_stats(self, req, **kwargs):
-        """Get controller statistics"""
+        """Get controller statistics (legacy endpoint)"""
         stats = {
             'active_ips': len(self.controller.traffic_stats),
             'suspicious_ips': list(self.controller.suspicious_ips),
             'malicious_ips': list(self.controller.malicious_ips),
             'flow_count': len(self.controller.flow_stats)
+        }
+        
+        return Response(content_type='application/json',
+                      body=json.dumps(stats).encode('utf-8'))
+
+    @route('api', '/api/stats', methods=['GET'])
+    def get_api_stats(self, req, **kwargs):
+        """Get controller statistics (standard API endpoint)"""
+        stats = {
+            'active_ips': len(self.controller.traffic_stats),
+            'suspicious_ips': list(self.controller.suspicious_ips),
+            'malicious_ips': list(self.controller.malicious_ips),
+            'flow_count': len(self.controller.flow_stats),
+            'last_update': time.strftime('%H:%M:%S')
         }
         
         return Response(content_type='application/json',

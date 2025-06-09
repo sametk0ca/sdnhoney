@@ -151,12 +151,20 @@ class SDNDashboard {
                 },
                 scales: {
                     x: {
-                        ticks: { color: '#ffffff' },
+                        ticks: { 
+                            color: '#ffffff',
+                            maxTicksLimit: 8,  // Show fewer labels for readability
+                            callback: function(value, index, values) {
+                                // Show every 3rd label (15-second intervals)
+                                return index % 3 === 0 ? this.getLabelForValue(value) : '';
+                            }
+                        },
                         grid: { color: 'rgba(255, 255, 255, 0.1)' }
                     },
                     y: {
                         ticks: { color: '#ffffff' },
-                        grid: { color: 'rgba(255, 255, 255, 0.1)' }
+                        grid: { color: 'rgba(255, 255, 255, 0.1)' },
+                        beginAtZero: true
                     }
                 },
                 interaction: {
@@ -294,11 +302,11 @@ class SDNDashboard {
                 const suspiciousIPs = data.map(d => d.suspicious_ips);
                 const maliciousIPs = data.map(d => d.malicious_ips);
                 
-                // Update chart data
-                this.chart.data.labels = labels.slice(-20); // Last 20 points
-                this.chart.data.datasets[0].data = activeIPs.slice(-20);
-                this.chart.data.datasets[1].data = suspiciousIPs.slice(-20);
-                this.chart.data.datasets[2].data = maliciousIPs.slice(-20);
+                // Update chart data (last 24 points = 2 minutes at 5-second intervals)
+                this.chart.data.labels = labels.slice(-24);
+                this.chart.data.datasets[0].data = activeIPs.slice(-24);
+                this.chart.data.datasets[1].data = suspiciousIPs.slice(-24);
+                this.chart.data.datasets[2].data = maliciousIPs.slice(-24);
                 
                 this.chart.update('none'); // Update without animation for real-time feel
             })

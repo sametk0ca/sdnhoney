@@ -140,7 +140,7 @@ main() {
         print_warning "Controller already running on port $CONTROLLER_PORT"
     else
         print_status "Starting Ryu SDN Controller..."
-        nohup ryu-manager controller/controller.py \
+        nohup ryu-manager controller/controller.py --wsapi-port 8080\
             --observe-links \
             --verbose \
             > "$CONTROLLER_LOG" 2>&1 &

@@ -12,8 +12,8 @@ PURPLE='\033[0;35m'
 CYAN='\033[0;36m'
 NC='\033[0m' # No Color
 
-# Function to check if a port is in use
-check_port() {
+# Function to check if a port is in use (localhost)
+check_localhost_port() {
     local port=$1
     if lsof -ti:$port >/dev/null 2>&1; then
         return 0  # Port is in use
@@ -22,18 +22,39 @@ check_port() {
     fi
 }
 
-# Function to check service status
+# Function to check Mininet services via process
+check_mininet_service() {
+    local port=$1
+    if pgrep -f "python3.*app.py $port" >/dev/null 2>&1; then
+        return 0  # Process running
+    else
+        return 1  # Process not running
+    fi
+}
+
+# Function to check service status with proper namespace
 check_service() {
     local port=$1
     local name=$2
     local description=$3
+    local namespace=$4
     
-    if check_port $port; then
-        echo -e "${GREEN}✅ $name${NC} (Port $port) - $description"
-        return 0
-    else
-        echo -e "${RED}❌ $name${NC} (Port $port) - $description"
-        return 1
+    if [ "$namespace" = "localhost" ]; then
+        if check_localhost_port $port; then
+            echo -e "${GREEN}✅ $name${NC} (Port $port) - $description"
+            return 0
+        else
+            echo -e "${RED}❌ $name${NC} (Port $port) - $description"
+            return 1
+        fi
+    elif [ "$namespace" = "mininet" ]; then
+        if check_mininet_service $port; then
+            echo -e "${GREEN}✅ $name${NC} (Port $port) - $description"
+            return 0
+        else
+            echo -e "${RED}❌ $name${NC} (Port $port) - $description"
+            return 1
+        fi
     fi
 }
 
@@ -47,39 +68,39 @@ total_count=0
 
 # Core Components
 echo -e "${CYAN}🎮 Core Components:${NC}"
-check_service 6653 "SDN Controller" "Ryu OpenFlow controller" && running_count=$((running_count + 1))
+check_service 6653 "SDN Controller" "Ryu OpenFlow controller" "localhost" && running_count=$((running_count + 1))
 total_count=$((total_count + 1))
 
-check_service 8080 "Controller API" "REST API for controller" && running_count=$((running_count + 1))
+check_service 8080 "Controller API" "REST API for controller" "localhost" && running_count=$((running_count + 1))
 total_count=$((total_count + 1))
 
 echo ""
 
 # Web Interfaces
 echo -e "${CYAN}🌐 Web Interfaces:${NC}"
-check_service 9000 "Presentation" "Academic presentation website" && running_count=$((running_count + 1))
+check_service 9000 "Presentation" "Academic presentation website" "localhost" && running_count=$((running_count + 1))
 total_count=$((total_count + 1))
 
-check_service 8090 "Dashboard" "Real-time monitoring dashboard" && running_count=$((running_count + 1))
+check_service 8090 "Dashboard" "Real-time monitoring dashboard" "localhost" && running_count=$((running_count + 1))
 total_count=$((total_count + 1))
 
 echo ""
 
-# Network Services
+# Network Services (Mininet namespace)
 echo -e "${CYAN}⚙️ Network Services:${NC}"
-check_service 8001 "Normal Server 1" "h1 - Regular web server" && running_count=$((running_count + 1))
+check_service 8001 "Normal Server 1" "h1 - Regular web server" "mininet" && running_count=$((running_count + 1))
 total_count=$((total_count + 1))
 
-check_service 8002 "Normal Server 2" "h2 - Regular web server" && running_count=$((running_count + 1))
+check_service 8002 "Normal Server 2" "h2 - Regular web server" "mininet" && running_count=$((running_count + 1))
 total_count=$((total_count + 1))
 
-check_service 8003 "Normal Server 3" "h3 - Regular web server" && running_count=$((running_count + 1))
+check_service 8003 "Normal Server 3" "h3 - Regular web server" "mininet" && running_count=$((running_count + 1))
 total_count=$((total_count + 1))
 
-check_service 8004 "Triage Honeypot" "h4 - ML-enabled honeypot" && running_count=$((running_count + 1))
+check_service 8004 "Triage Honeypot" "h4 - ML-enabled honeypot" "mininet" && running_count=$((running_count + 1))
 total_count=$((total_count + 1))
 
-check_service 8005 "Deep Honeypot" "h5 - Advanced honeypot" && running_count=$((running_count + 1))
+check_service 8005 "Deep Honeypot" "h5 - Advanced honeypot" "mininet" && running_count=$((running_count + 1))
 total_count=$((total_count + 1))
 
 echo ""

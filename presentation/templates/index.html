@@ -1,0 +1,365 @@
+{% extends "base.html" %}
+
+{% block title %}SDN Honeypot Security System - Home{% endblock %}
+
+{% block content %}
+<!-- Hero Section -->
+<section class="hero-section position-relative overflow-hidden">
+    <!-- Background Video -->
+    <video autoplay muted loop class="position-absolute w-100 h-100" style="top: 0; left: 0; object-fit: cover; z-index: -1;">
+        <source src="{{ url_for('static', filename='backgroundvideo.mp4') }}" type="video/mp4">
+        Your browser does not support the video tag.
+    </video>
+    
+    <!-- Dark Overlay for Better Text Readability -->
+    <div class="position-absolute w-100 h-100" style="top: 0; left: 0; background: rgba(0, 0, 0, 0.5); z-index: 0;"></div>
+    
+    <!-- Content -->
+    <div class="container position-relative" style="z-index: 1;">
+        <div class="row justify-content-center">
+            <div class="col-lg-8 text-center">
+                <h1 class="display-3 fw-bold mb-4" style="text-shadow: 2px 2px 4px rgba(0,0,0,0.8);">
+                    <img src="{{ url_for('static', filename='images/honeypotlogo.png') }}" 
+                         alt="Honeypot Logo" 
+                         class="logo-hero-transparent"
+                         style="height: 80px; width: 80px; margin-right: 20px; vertical-align: middle;">
+                    SDN Honeypot Security System
+                </h1>
+                <p class="lead mb-4" style="text-shadow: 1px 1px 2px rgba(0,0,0,0.8);">
+                    A cutting-edge research project demonstrating intelligent network security through 
+                    <strong>Software Defined Networking</strong>, <strong>Machine Learning</strong>, 
+                    and <strong>Multi-layered Honeypot Deception</strong>
+                </p>
+                <div class="d-flex justify-content-center gap-3 flex-wrap">
+                    <a href="{{ url_for('demo') }}" class="btn btn-primary btn-lg">
+                        <i class="fas fa-play-circle"></i> Live Demo
+                    </a>
+                    <a href="{{ url_for('documentation') }}" class="btn btn-outline-light btn-lg">
+                        <i class="fas fa-book"></i> Documentation
+                    </a>
+                    <a href="{{ url_for('monitoring') }}" class="btn btn-outline-light btn-lg">
+                        <i class="fas fa-chart-line"></i> System Status
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- System Status Banner -->
+<section class="py-4" style="background: rgba(0,0,0,0.3);">
+    <div class="container">
+        <div class="row align-items-center">
+            <div class="col-md-6">
+                <h5 class="mb-0">
+                    <span class="status-indicator" id="system-status-indicator"></span>
+                    System Status: <span id="system-status-text">Checking...</span>
+                </h5>
+            </div>
+            <div class="col-md-6 text-md-end">
+                <small>
+                    <i class="fas fa-server"></i> Controller: <span id="controller-status">-</span> |
+                    <i class="fas fa-chart-line"></i> Dashboard: <span id="dashboard-status">-</span> |
+                    <i class="fas fa-brain"></i> ML Model: <span id="ml-status">-</span>
+                </small>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Key Features -->
+<section class="py-5">
+    <div class="container">
+        <div class="row text-center mb-5">
+            <div class="col-12">
+                <h2 class="display-5 fw-bold mb-3">Key Features</h2>
+                <p class="lead">Advanced network security through intelligent traffic analysis and deception</p>
+            </div>
+        </div>
+        
+        <div class="row g-4">
+            <div class="col-lg-3 col-md-6">
+                <div class="card h-100 text-center">
+                    <div class="card-body">
+                        <div class="feature-icon">
+                            <i class="fas fa-network-wired"></i>
+                        </div>
+                        <h5 class="card-title">SDN Controller</h5>
+                        <p class="card-text">
+                            Ryu-based OpenFlow controller with intelligent traffic classification 
+                            and dynamic flow installation for seamless redirection.
+                        </p>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-lg-3 col-md-6">
+                <div class="card h-100 text-center">
+                    <div class="card-body">
+                        <div class="feature-icon">
+                            <i class="fas fa-brain"></i>
+                        </div>
+                        <h5 class="card-title">ML Classification</h5>
+                        <p class="card-text">
+                            Real-time behavioral analysis with binary classification 
+                            (1=malicious, 0=benign) based on request patterns and features.
+                        </p>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-lg-3 col-md-6">
+                <div class="card h-100 text-center">
+                    <div class="card-body">
+                        <div class="feature-icon">
+                            <i class="fas fa-spider"></i>
+                        </div>
+                        <h5 class="card-title">Multi-layer Honeypots</h5>
+                        <p class="card-text">
+                            Triage honeypot for initial classification and deep honeypot 
+                            for advanced deception and prolonged attacker engagement.
+                        </p>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-lg-3 col-md-6">
+                <div class="card h-100 text-center">
+                    <div class="card-body">
+                        <div class="feature-icon">
+                            <i class="fas fa-chart-line"></i>
+                        </div>
+                        <h5 class="card-title">Real-time Monitoring</h5>
+                        <p class="card-text">
+                            Live traffic visualization, threat detection alerts, 
+                            and comprehensive logging for security analysis.
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Traffic Flow Diagram -->
+<section class="py-5" style="background: rgba(0,0,0,0.2);">
+    <div class="container">
+        <div class="row">
+            <div class="col-12 text-center mb-5">
+                <h2 class="display-5 fw-bold mb-3">Traffic Flow & Classification</h2>
+                <p class="lead">How requests are analyzed and redirected based on threat level</p>
+            </div>
+        </div>
+        
+        <div class="architecture-diagram">
+            <div class="row align-items-center">
+                <div class="col-md-2">
+                    <div class="component-box">
+                        <i class="fas fa-laptop fa-2x mb-2"></i>
+                        <h6>External Client</h6>
+                        <small>h6 (10.0.0.6)</small>
+                    </div>
+                </div>
+                
+                <div class="col-md-1 text-center">
+                    <i class="fas fa-arrow-right fa-2x text-primary"></i>
+                </div>
+                
+                <div class="col-md-2">
+                    <div class="component-box">
+                        <i class="fas fa-microchip fa-2x mb-2"></i>
+                        <h6>SDN Controller</h6>
+                        <small>Traffic Analysis</small>
+                    </div>
+                </div>
+                
+                <div class="col-md-1 text-center">
+                    <i class="fas fa-code-branch fa-2x text-warning"></i>
+                </div>
+                
+                <div class="col-md-6">
+                    <div class="row g-2">
+                        <div class="col-4">
+                            <div class="component-box" style="border-color: #27ae60;">
+                                <i class="fas fa-server fa-lg mb-1"></i>
+                                <h6 style="font-size: 0.9rem;">Normal Servers</h6>
+                                <small>h1, h2, h3</small>
+                                <div class="badge bg-success mt-1">Normal Traffic</div>
+                            </div>
+                        </div>
+                        <div class="col-4">
+                            <div class="component-box" style="border-color: #f39c12;">
+                                <i class="fas fa-filter fa-lg mb-1"></i>
+                                <h6 style="font-size: 0.9rem;">Triage Honeypot</h6>
+                                <small>h4 (ML Analysis)</small>
+                                <div class="badge bg-warning mt-1">Suspicious</div>
+                            </div>
+                        </div>
+                        <div class="col-4">
+                            <div class="component-box" style="border-color: #e74c3c;">
+                                <i class="fas fa-bug fa-lg mb-1"></i>
+                                <h6 style="font-size: 0.9rem;">Deep Honeypot</h6>
+                                <small>h5 (Deception)</small>
+                                <div class="badge bg-danger mt-1">Malicious</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+
+
+<!-- Technology Stack -->
+<section class="py-5" style="background: rgba(0,0,0,0.2);">
+    <div class="container">
+        <div class="row text-center mb-5">
+            <div class="col-12">
+                <h2 class="display-5 fw-bold mb-3">Technology Stack</h2>
+                <p class="lead">Built with industry-standard tools and frameworks</p>
+            </div>
+        </div>
+        
+        <div class="row g-4">
+            <div class="col-lg-2 col-md-4 col-6 text-center">
+                <div class="card h-100">
+                    <div class="card-body">
+                        <i class="fas fa-network-wired fa-3x text-primary mb-3"></i>
+                        <h6>Ryu SDN</h6>
+                        <small>OpenFlow Controller</small>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-lg-2 col-md-4 col-6 text-center">
+                <div class="card h-100">
+                    <div class="card-body">
+                        <i class="fas fa-server fa-3x text-success mb-3"></i>
+                        <h6>Mininet</h6>
+                        <small>Network Emulation</small>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-lg-2 col-md-4 col-6 text-center">
+                <div class="card h-100">
+                    <div class="card-body">
+                        <i class="fab fa-python fa-3x text-warning mb-3"></i>
+                        <h6>Python</h6>
+                        <small>Core Development</small>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-lg-2 col-md-4 col-6 text-center">
+                <div class="card h-100">
+                    <div class="card-body">
+                        <i class="fas fa-brain fa-3x text-info mb-3"></i>
+                        <h6>Scikit-learn</h6>
+                        <small>Machine Learning</small>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-lg-2 col-md-4 col-6 text-center">
+                <div class="card h-100">
+                    <div class="card-body">
+                        <i class="fas fa-globe fa-3x text-primary mb-3"></i>
+                        <h6>Flask</h6>
+                        <small>Web Framework</small>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-lg-2 col-md-4 col-6 text-center">
+                <div class="card h-100">
+                    <div class="card-body">
+                        <i class="fas fa-chart-bar fa-3x text-danger mb-3"></i>
+                        <h6>Bootstrap</h6>
+                        <small>UI Framework</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Call to Action -->
+<section class="py-5">
+    <div class="container">
+        <div class="row justify-content-center text-center">
+            <div class="col-lg-8">
+                <h2 class="display-5 fw-bold mb-4">Ready to Explore?</h2>
+                <p class="lead mb-4">
+                    Dive into the interactive demo, explore the system architecture, 
+                    or check out the comprehensive documentation.
+                </p>
+                <div class="d-flex justify-content-center gap-3 flex-wrap">
+                    <a href="{{ url_for('demo') }}" class="btn btn-primary btn-lg">
+                        <i class="fas fa-play-circle"></i> Start Live Demo
+                    </a>
+                    <a href="{{ url_for('components') }}" class="btn btn-outline-light btn-lg">
+                        <i class="fas fa-cubes"></i> Explore Components
+                    </a>
+                    <a href="{{ url_for('architecture') }}" class="btn btn-outline-light btn-lg">
+                        <i class="fas fa-sitemap"></i> View Architecture
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Function to update system status
+    function updateSystemStatus() {
+        fetch('/api/system-status')
+            .then(response => response.json())
+            .then(data => {
+                // Update status indicators
+                const indicator = document.getElementById('system-status-indicator');
+                const statusText = document.getElementById('system-status-text');
+                const controllerStatus = document.getElementById('controller-status');
+                const dashboardStatus = document.getElementById('dashboard-status');
+                const mlStatus = document.getElementById('ml-status');
+                
+                if (data.controller.status === 'ACTIVE') {
+                    indicator.className = 'status-indicator status-active';
+                    statusText.textContent = 'System Online';
+                    controllerStatus.innerHTML = '<span class="text-success">Active</span>';
+                } else {
+                    indicator.className = 'status-indicator status-inactive';
+                    statusText.textContent = 'System Offline';
+                    controllerStatus.innerHTML = '<span class="text-danger">Inactive</span>';
+                }
+                
+                dashboardStatus.innerHTML = data.dashboard.status === 'ACTIVE' ? 
+                    '<span class="text-success">Active</span>' : 
+                    '<span class="text-danger">Inactive</span>';
+                
+                mlStatus.innerHTML = data.ml_model.status === 'OPERATIONAL' ? 
+                    '<span class="text-success">Operational</span>' : 
+                    '<span class="text-danger">Inactive</span>';
+                
+
+            })
+            .catch(error => {
+                console.error('Error fetching system status:', error);
+                document.getElementById('system-status-indicator').className = 'status-indicator status-inactive';
+                document.getElementById('system-status-text').textContent = 'Status Unknown';
+            });
+    }
+    
+    // Initial status update
+    updateSystemStatus();
+    
+    // Update every 10 seconds
+    setInterval(updateSystemStatus, 10000);
+});
+</script>
+{% endblock %} 

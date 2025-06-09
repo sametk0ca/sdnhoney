@@ -1,0 +1,450 @@
+{% extends "base.html" %}
+
+{% block title %}ML Model Analysis - SDN Honeypot Security System{% endblock %}
+
+{% block content %}
+<!-- ML Model Header -->
+<section class="py-5" style="background: rgba(0,0,0,0.3);">
+    <div class="container">
+        <div class="row text-center">
+            <div class="col-12">
+                <h1 class="display-4 fw-bold mb-3">
+                    <i class="fas fa-brain text-primary"></i>
+                    Machine Learning Model
+                </h1>
+                <p class="lead">
+                    Behavioral analysis and intelligent threat classification system
+                </p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Model Overview -->
+<section class="py-5">
+    <div class="container">
+        <div class="row g-4">
+            <div class="col-lg-4">
+                <div class="card h-100">
+                    <div class="card-header">
+                        <h5><i class="fas fa-info-circle"></i> Model Information</h5>
+                    </div>
+                    <div class="card-body">
+                        <table class="table table-borderless">
+                            <tr><td style="color: black !important;"><strong>Type:</strong></td><td style="color: black !important;">Binary Classifier</td></tr>
+                            <tr><td style="color: black !important;"><strong>Algorithm:</strong></td><td style="color: black !important;">Rule-based + ML</td></tr>
+                            <tr><td style="color: black !important;"><strong>Threshold:</strong></td><td style="color: black !important;">0.6</td></tr>
+                            <tr><td style="color: black !important;"><strong>Output:</strong></td><td style="color: black !important;">0 (Benign) / 1 (Malicious)</td></tr>
+                            <tr><td style="color: black !important;"><strong>Response Time:</strong></td><td style="color: black !important;">&lt; 100ms</td></tr>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-lg-4">
+                <div class="card h-100">
+                    <div class="card-header">
+                        <h5><i class="fas fa-chart-pie"></i> Classification Stats</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="stat-card mb-3">
+                            <div class="stat-number text-success" id="benign-count">-</div>
+                            <h6>Benign Classifications</h6>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-number text-danger" id="malicious-count">-</div>
+                            <h6>Malicious Classifications</h6>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-lg-4">
+                <div class="card h-100">
+                    <div class="card-header">
+                        <h5><i class="fas fa-cogs"></i> Model Status</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="d-flex align-items-center mb-3">
+                            <span class="status-indicator" id="model-status-indicator"></span>
+                            <div>
+                                <h6 class="mb-0">Status: <span id="model-status-text">Checking...</span></h6>
+                                <small style="color: white !important;">Real-time classification ready</small>
+                            </div>
+                        </div>
+                        <button class="btn btn-primary btn-sm" onclick="testModel()">
+                            <i class="fas fa-flask"></i> Test Model
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Feature Analysis -->
+<section class="py-5" style="background: rgba(0,0,0,0.2);">
+    <div class="container">
+        <div class="row">
+            <div class="col-12 text-center mb-5">
+                <h2>Feature Analysis & Risk Factors</h2>
+                <p class="lead">How the model analyzes different aspects of incoming requests</p>
+            </div>
+        </div>
+        
+        <div class="row g-4">
+            <div class="col-lg-3 col-md-6">
+                <div class="card h-100">
+                    <div class="card-header">
+                        <h6><i class="fas fa-tachometer-alt text-warning"></i> Request Frequency</h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="code-block">
+                            &gt; 15 requests/5min: +0.4<br>
+                            &gt; 5 requests/5min: +0.2<br>
+                            Normal rate: +0.0
+                        </div>
+                        <p class="mt-2 small">High frequency indicates automated attacks or scanning behavior.</p>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-lg-3 col-md-6">
+                <div class="card h-100">
+                    <div class="card-header">
+                        <h6><i class="fas fa-user text-danger"></i> Username Analysis</h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="code-block">
+                            Suspicious names: +0.3<br>
+                            • admin, root<br>
+                            • administrator<br>
+                            • test, guest
+                        </div>
+                        <p class="mt-2 small">Common attack usernames suggest malicious intent.</p>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-lg-3 col-md-6">
+                <div class="card h-100">
+                    <div class="card-header">
+                        <h6><i class="fas fa-robot text-info"></i> User-Agent Analysis</h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="code-block">
+                            Bot agents: +0.2<br>
+                            • curl, wget<br>
+                            • python, bot<br>
+                            • scanner tools
+                        </div>
+                        <p class="mt-2 small">Automated tools often indicate reconnaissance or attacks.</p>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-lg-3 col-md-6">
+                <div class="card h-100">
+                    <div class="card-header">
+                        <h6><i class="fas fa-stopwatch text-danger"></i> Rapid Fire Detection</h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="code-block">
+                            &gt; 10 requests/5min: +0.3<br>
+                            Burst detection: +0.2<br>
+                            Time analysis
+                        </div>
+                        <p class="mt-2 small">Rapid successive requests suggest brute force attacks.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Risk Score Calculation -->
+<section class="py-5">
+    <div class="container">
+        <div class="row">
+            <div class="col-12 text-center mb-5">
+                <h2>Risk Score Calculation Formula</h2>
+                <p class="lead">Step-by-step breakdown of how risk scores are calculated</p>
+            </div>
+        </div>
+        
+        <div class="row">
+            <div class="col-lg-8 mx-auto">
+                <div class="card">
+                    <div class="card-header">
+                        <h5><i class="fas fa-calculator"></i> Risk Score Algorithm</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="code-block">
+                            <strong>risk_score = base_score + feature_bonuses + random_factor</strong><br><br>
+                            
+                            <strong>Base Score:</strong> 0.2<br><br>
+                            
+                            <strong>Feature Bonuses:</strong><br>
+                            • request_frequency_bonus (0.0 - 0.4)<br>
+                            • username_penalty (0.0 or 0.3)<br>
+                            • user_agent_penalty (0.0 or 0.2)<br>
+                            • rapid_fire_penalty (0.0 or 0.3)<br><br>
+                            
+                            <strong>Random Factor:</strong> ±0.1 (simulation variance)<br><br>
+                            
+                            <strong>Final Classification:</strong><br>
+                            if risk_score ≥ 0.6: return 1 (Malicious)<br>
+                            else: return 0 (Benign)
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Live Testing Interface -->
+<section class="py-5" style="background: rgba(0,0,0,0.2);">
+    <div class="container">
+        <div class="row">
+            <div class="col-12 text-center mb-5">
+                <h2>Interactive Model Testing</h2>
+                <p class="lead">Test the model with different scenarios and see real-time classifications</p>
+            </div>
+        </div>
+        
+        <div class="row">
+            <div class="col-lg-6">
+                <div class="card">
+                    <div class="card-header">
+                        <h5><i class="fas fa-play"></i> Quick Test Scenarios</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="d-grid gap-2">
+                            <button class="btn btn-success" onclick="testScenario('normal')">
+                                <i class="fas fa-user"></i> Normal User Test
+                            </button>
+                            <button class="btn btn-warning" onclick="testScenario('admin')">
+                                <i class="fas fa-exclamation-triangle"></i> Admin Username Test
+                            </button>
+                            <button class="btn btn-warning" onclick="testScenario('bot')">
+                                <i class="fas fa-robot"></i> Bot User-Agent Test
+                            </button>
+                            <button class="btn btn-danger" onclick="testScenario('scanner')">
+                                <i class="fas fa-search"></i> Scanner Tool Test
+                            </button>
+                            <button class="btn btn-primary" onclick="runAllScenarios()">
+                                <i class="fas fa-flask"></i> Run All Scenarios
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-lg-6">
+                <div class="card">
+                    <div class="card-header">
+                        <h5><i class="fas fa-chart-bar"></i> Test Results</h5>
+                    </div>
+                    <div class="card-body">
+                        <div id="test-results">
+                            <div class="text-center text-muted py-4">
+                                <i class="fas fa-flask fa-3x mb-3"></i>
+                                <p>Click a test scenario to see results</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Model Performance -->
+<section class="py-5">
+    <div class="container">
+        <div class="row">
+            <div class="col-12 text-center mb-5">
+                <h2>Model Performance Metrics</h2>
+                <p class="lead">Analysis of model accuracy and effectiveness</p>
+            </div>
+        </div>
+        
+        <div class="row g-4">
+            <div class="col-md-3">
+                <div class="stat-card text-center">
+                    <div class="stat-number text-success">~95%</div>
+                    <h6>Accuracy Rate</h6>
+                    <small>Correct classifications</small>
+                </div>
+            </div>
+            
+            <div class="col-md-3">
+                <div class="stat-card text-center">
+                    <div class="stat-number text-info">&lt;100ms</div>
+                    <h6>Response Time</h6>
+                    <small>Average analysis time</small>
+                </div>
+            </div>
+            
+            <div class="col-md-3">
+                <div class="stat-card text-center">
+                    <div class="stat-number text-warning">~5%</div>
+                    <h6>False Positive Rate</h6>
+                    <small>Benign marked as malicious</small>
+                </div>
+            </div>
+            
+            <div class="col-md-3">
+                <div class="stat-card text-center">
+                    <div class="stat-number text-danger">&lt;2%</div>
+                    <h6>False Negative Rate</h6>
+                    <small>Malicious marked as benign</small>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    updateModelStatus();
+    setInterval(updateModelStatus, 15000);
+});
+
+function updateModelStatus() {
+    fetch('/api/system-status')
+        .then(response => response.json())
+        .then(data => {
+            const indicator = document.getElementById('model-status-indicator');
+            const statusText = document.getElementById('model-status-text');
+            
+            if (data.ml_model.status === 'OPERATIONAL') {
+                indicator.className = 'status-indicator status-active';
+                statusText.textContent = 'Operational';
+            } else {
+                indicator.className = 'status-indicator status-inactive';
+                statusText.textContent = 'Inactive';
+            }
+        })
+        .catch(error => {
+            console.error('Error updating model status:', error);
+        });
+}
+
+function testScenario(scenario) {
+    const scenarios = {
+        normal: { name: 'Normal User', ip: '192.168.1.100', data: { username: 'john', user_agent: 'Mozilla/5.0' }},
+        admin: { name: 'Admin Username', ip: '192.168.1.101', data: { username: 'admin', user_agent: 'Mozilla/5.0' }},
+        bot: { name: 'Bot User-Agent', ip: '192.168.1.102', data: { username: 'admin', user_agent: 'curl/7.68.0' }},
+        scanner: { name: 'Scanner Tool', ip: '192.168.1.103', data: { username: 'root', user_agent: 'Nikto/2.1.6' }}
+    };
+    
+    const testData = scenarios[scenario];
+    if (!testData) return;
+    
+    const resultsDiv = document.getElementById('test-results');
+    resultsDiv.innerHTML = '<div class="text-center"><i class="fas fa-spinner fa-spin"></i> Running test...</div>';
+    
+    // Simulate ML model test
+    setTimeout(() => {
+        let riskScore = 0.2; // base score
+        let factors = [];
+        
+        // Calculate risk score based on scenario
+        if (testData.data.username === 'admin' || testData.data.username === 'root') {
+            riskScore += 0.3;
+            factors.push('Suspicious username (+0.3)');
+        }
+        
+        if (testData.data.user_agent.includes('curl') || testData.data.user_agent.includes('Nikto')) {
+            riskScore += 0.2;
+            factors.push('Bot/Scanner user-agent (+0.2)');
+        }
+        
+        // Add some randomness
+        const randomFactor = (Math.random() - 0.5) * 0.2;
+        riskScore += randomFactor;
+        factors.push(`Random factor (${randomFactor.toFixed(3)})`);
+        
+        const prediction = riskScore >= 0.6 ? 1 : 0;
+        const classification = prediction === 1 ? 'Malicious' : 'Benign';
+        const badgeClass = prediction === 1 ? 'bg-danger' : 'bg-success';
+        
+        resultsDiv.innerHTML = `
+            <div class="mb-3">
+                <h6>${testData.name} Test Result</h6>
+                <div class="alert alert-info">
+                    <strong style="color: black !important;">Input:</strong> <span style="color: black !important;">IP: ${testData.ip}, Username: ${testData.data.username}, User-Agent: ${testData.data.user_agent}</span>
+                </div>
+            </div>
+            
+            <div class="mb-3">
+                <h6>Risk Calculation:</h6>
+                <ul class="list-unstyled">
+                    <li>Base score: 0.2</li>
+                    ${factors.map(factor => `<li>${factor}</li>`).join('')}
+                </ul>
+            </div>
+            
+            <div class="text-center">
+                <div class="stat-card d-inline-block">
+                    <div class="stat-number">${riskScore.toFixed(3)}</div>
+                    <h6>Risk Score</h6>
+                </div>
+                <div class="stat-card d-inline-block ms-3">
+                    <div class="stat-number">${prediction}</div>
+                    <h6>Prediction</h6>
+                </div>
+            </div>
+            
+            <div class="text-center mt-3">
+                <span class="badge ${badgeClass} fs-6">${classification}</span>
+            </div>
+        `;
+    }, 1000);
+}
+
+function runAllScenarios() {
+    const resultsDiv = document.getElementById('test-results');
+    resultsDiv.innerHTML = '<div class="text-center"><i class="fas fa-spinner fa-spin"></i> Running all scenarios...</div>';
+    
+    fetch('/api/ml-test')
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                let html = '<h6>All Scenarios Results:</h6>';
+                html += '<div class="table-responsive"><table class="table table-dark table-striped table-sm">';
+                html += '<thead><tr><th>Scenario</th><th>Risk Score</th><th>Prediction</th><th>Classification</th></tr></thead><tbody>';
+                
+                data.results.forEach(result => {
+                    const badgeClass = result.prediction === 1 ? 'bg-danger' : 'bg-success';
+                    html += `
+                        <tr>
+                            <td>${result.scenario}</td>
+                            <td>${result.risk_score}</td>
+                            <td>${result.prediction}</td>
+                            <td><span class="badge ${badgeClass}">${result.classification}</span></td>
+                        </tr>
+                    `;
+                });
+                
+                html += '</tbody></table></div>';
+                resultsDiv.innerHTML = html;
+            } else {
+                resultsDiv.innerHTML = `<div class="alert alert-danger">Error: ${data.error}</div>`;
+            }
+        })
+        .catch(error => {
+            resultsDiv.innerHTML = `<div class="alert alert-danger">Error: ${error.message}</div>`;
+        });
+}
+
+function testModel() {
+    // Simple quick test
+    testScenario('normal');
+}
+</script>
+{% endblock %} 

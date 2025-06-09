@@ -1,0 +1,406 @@
+{% extends "base.html" %}
+
+{% block title %}Documentation - SDN Honeypot Security System{% endblock %}
+
+{% block extra_css %}
+<style>
+    .documentation-content {
+        background: rgba(255, 255, 255, 0.05);
+        border-radius: 10px;
+        padding: 30px;
+        margin: 20px 0;
+    }
+    
+    .documentation-content h1,
+    .documentation-content h2,
+    .documentation-content h3,
+    .documentation-content h4,
+    .documentation-content h5,
+    .documentation-content h6 {
+        color: var(--secondary-color);
+        margin-top: 30px;
+        margin-bottom: 15px;
+    }
+    
+    .documentation-content h1 {
+        border-bottom: 2px solid var(--secondary-color);
+        padding-bottom: 10px;
+    }
+    
+    .documentation-content h2 {
+        border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+        padding-bottom: 5px;
+    }
+    
+    .documentation-content code {
+        background: rgba(0, 0, 0, 0.3);
+        color: #f39c12;
+        padding: 2px 6px;
+        border-radius: 3px;
+        font-family: 'Courier New', monospace;
+    }
+    
+    .documentation-content pre {
+        background: #1e1e1e;
+        color: #f8f8f2;
+        padding: 20px;
+        border-radius: 8px;
+        border-left: 4px solid var(--secondary-color);
+        overflow-x: auto;
+        margin: 20px 0;
+    }
+    
+    .documentation-content pre code {
+        background: none;
+        color: inherit;
+        padding: 0;
+    }
+    
+    .documentation-content table {
+        width: 100%;
+        border-collapse: collapse;
+        margin: 20px 0;
+        background: rgba(0, 0, 0, 0.2);
+    }
+    
+    .documentation-content table th,
+    .documentation-content table td {
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        padding: 12px;
+        text-align: left;
+    }
+    
+    .documentation-content table th {
+        background: rgba(52, 152, 219, 0.2);
+        color: var(--secondary-color);
+        font-weight: bold;
+    }
+    
+    .documentation-content blockquote {
+        border-left: 4px solid var(--warning-color);
+        background: rgba(243, 156, 18, 0.1);
+        padding: 15px 20px;
+        margin: 20px 0;
+        font-style: italic;
+    }
+    
+    .documentation-content ul,
+    .documentation-content ol {
+        padding-left: 30px;
+        margin: 15px 0;
+    }
+    
+    .documentation-content li {
+        margin: 8px 0;
+        line-height: 1.6;
+    }
+    
+    .documentation-content a {
+        color: var(--secondary-color);
+        text-decoration: none;
+    }
+    
+    .documentation-content a:hover {
+        color: #2980b9;
+        text-decoration: underline;
+    }
+    
+    .documentation-toc {
+        background: rgba(52, 73, 94, 0.8);
+        border-radius: 8px;
+        padding: 20px;
+        position: sticky;
+        top: 100px;
+        max-height: calc(100vh - 120px);
+        overflow-y: auto;
+    }
+    
+    .documentation-toc ul {
+        list-style: none;
+        padding-left: 0;
+    }
+    
+    .documentation-toc ul ul {
+        padding-left: 20px;
+    }
+    
+    .documentation-toc li {
+        margin: 5px 0;
+    }
+    
+    .documentation-toc a {
+        color: rgba(255, 255, 255, 0.8);
+        text-decoration: none;
+        font-size: 0.9rem;
+        display: block;
+        padding: 5px 10px;
+        border-radius: 4px;
+        transition: all 0.3s;
+    }
+    
+    .documentation-toc a:hover {
+        background: rgba(52, 152, 219, 0.2);
+        color: var(--secondary-color);
+    }
+    
+    .back-to-top {
+        position: fixed;
+        bottom: 30px;
+        right: 30px;
+        background: var(--secondary-color);
+        color: white;
+        border: none;
+        border-radius: 50%;
+        width: 50px;
+        height: 50px;
+        font-size: 20px;
+        cursor: pointer;
+        opacity: 0;
+        transition: opacity 0.3s;
+        z-index: 1000;
+    }
+    
+    .back-to-top.visible {
+        opacity: 1;
+    }
+    
+    .back-to-top:hover {
+        background: #2980b9;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Documentation Header -->
+<section class="py-5" style="background: rgba(0,0,0,0.3);">
+    <div class="container">
+        <div class="row text-center">
+            <div class="col-12">
+                <h1 class="display-4 fw-bold mb-3">
+                    <i class="fas fa-book text-primary"></i>
+                    Project Documentation
+                </h1>
+                <p class="lead">
+                    Complete technical documentation and implementation guide
+                </p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Documentation Content -->
+<section class="py-5">
+    <div class="container">
+        <div class="row">
+            <!-- Table of Contents -->
+            <div class="col-lg-3 mb-4">
+                <div class="documentation-toc">
+                    <h5 class="mb-3">
+                        <i class="fas fa-list"></i> Table of Contents
+                    </h5>
+                    <div id="toc-content">
+                        <!-- Table of contents will be generated here -->
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Main Documentation -->
+            <div class="col-lg-9">
+                <div class="documentation-content">
+                    {% if content %}
+                        {{ content }}
+                    {% else %}
+                        <div class="text-center py-5">
+                            <i class="fas fa-exclamation-triangle fa-3x text-warning mb-3"></i>
+                            <h3>Documentation Not Available</h3>
+                            <p class="lead">The README.md file could not be loaded.</p>
+                            <p>Please ensure the README.md file exists in the project root directory.</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Quick Navigation -->
+<section class="py-5" style="background: rgba(0,0,0,0.2);">
+    <div class="container">
+        <div class="row text-center">
+            <div class="col-12 mb-4">
+                <h2>Quick Navigation</h2>
+                <p class="lead">Jump to different sections of the system</p>
+            </div>
+        </div>
+        
+        <div class="row g-4">
+            <div class="col-md-3">
+                <div class="card h-100 text-center">
+                    <div class="card-body">
+                        <i class="fas fa-play-circle fa-3x text-primary mb-3"></i>
+                        <h5 style="color: white !important;">Live Demo</h5>
+                        <p style="color: white !important;">Try the interactive demo with real commands</p>
+                        <a href="{{ url_for('demo') }}" class="btn btn-primary">Start Demo</a>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-md-3">
+                <div class="card h-100 text-center">
+                    <div class="card-body">
+                        <i class="fas fa-sitemap fa-3x text-success mb-3"></i>
+                        <h5 style="color: white !important;">Architecture</h5>
+                        <p style="color: white !important;">Explore the system architecture and components</p>
+                        <a href="{{ url_for('architecture') }}" class="btn btn-success">View Architecture</a>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-md-3">
+                <div class="card h-100 text-center">
+                    <div class="card-body">
+                        <i class="fas fa-chart-line fa-3x text-warning mb-3"></i>
+                        <h5 style="color: white !important;">Monitoring</h5>
+                        <p style="color: white !important;">Real-time system monitoring and statistics</p>
+                        <a href="{{ url_for('monitoring') }}" class="btn btn-warning">View Monitoring</a>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-md-3">
+                <div class="card h-100 text-center">
+                    <div class="card-body">
+                        <i class="fas fa-brain fa-3x text-info mb-3"></i>
+                        <h5 style="color: white !important;">ML Model</h5>
+                        <p style="color: white !important;">Machine learning model details and analysis</p>
+                        <a href="{{ url_for('ml_model') }}" class="btn btn-info">View ML Model</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Back to Top Button -->
+<button class="back-to-top" id="backToTop" onclick="scrollToTop()">
+    <i class="fas fa-chevron-up"></i>
+</button>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    generateTableOfContents();
+    setupBackToTop();
+    setupSmoothScrolling();
+});
+
+function generateTableOfContents() {
+    const content = document.querySelector('.documentation-content');
+    const tocContent = document.getElementById('toc-content');
+    
+    if (!content) return;
+    
+    const headings = content.querySelectorAll('h1, h2, h3, h4, h5, h6');
+    
+    if (headings.length === 0) {
+        tocContent.innerHTML = '<p class="text-muted">No headings found</p>';
+        return;
+    }
+    
+    let tocHTML = '<ul>';
+    let currentLevel = 1;
+    
+    headings.forEach((heading, index) => {
+        // Create ID for heading if it doesn't have one
+        if (!heading.id) {
+            heading.id = 'heading-' + index;
+        }
+        
+        const level = parseInt(heading.tagName.substring(1));
+        const text = heading.textContent;
+        
+        // Adjust nesting level
+        if (level > currentLevel) {
+            tocHTML += '<ul>'.repeat(level - currentLevel);
+        } else if (level < currentLevel) {
+            tocHTML += '</ul>'.repeat(currentLevel - level);
+        }
+        
+        tocHTML += `<li><a href="#${heading.id}">${text}</a></li>`;
+        currentLevel = level;
+    });
+    
+    tocHTML += '</ul>'.repeat(currentLevel);
+    tocContent.innerHTML = tocHTML;
+}
+
+function setupBackToTop() {
+    const backToTopButton = document.getElementById('backToTop');
+    
+    window.addEventListener('scroll', function() {
+        if (window.pageYOffset > 300) {
+            backToTopButton.classList.add('visible');
+        } else {
+            backToTopButton.classList.remove('visible');
+        }
+    });
+}
+
+function setupSmoothScrolling() {
+    // Smooth scrolling for TOC links
+    document.querySelectorAll('.documentation-toc a[href^="#"]').forEach(link => {
+        link.addEventListener('click', function(e) {
+            e.preventDefault();
+            
+            const targetId = this.getAttribute('href');
+            const targetElement = document.querySelector(targetId);
+            
+            if (targetElement) {
+                targetElement.scrollIntoView({
+                    behavior: 'smooth',
+                    block: 'start'
+                });
+            }
+        });
+    });
+}
+
+function scrollToTop() {
+    window.scrollTo({
+        top: 0,
+        behavior: 'smooth'
+    });
+}
+
+// Highlight current section in TOC
+window.addEventListener('scroll', function() {
+    const headings = document.querySelectorAll('.documentation-content h1, .documentation-content h2, .documentation-content h3, .documentation-content h4, .documentation-content h5, .documentation-content h6');
+    const tocLinks = document.querySelectorAll('.documentation-toc a');
+    
+    let currentHeading = null;
+    
+    headings.forEach(heading => {
+        const rect = heading.getBoundingClientRect();
+        if (rect.top <= 100) {
+            currentHeading = heading;
+        }
+    });
+    
+    // Remove active class from all TOC links
+    tocLinks.forEach(link => {
+        link.style.background = '';
+        link.style.color = '';
+    });
+    
+    // Add active class to current section
+    if (currentHeading) {
+        const activeLink = document.querySelector(`.documentation-toc a[href="#${currentHeading.id}"]`);
+        if (activeLink) {
+            activeLink.style.background = 'rgba(52, 152, 219, 0.3)';
+            activeLink.style.color = 'var(--secondary-color)';
+        }
+    }
+});
+</script>
+{% endblock %} 

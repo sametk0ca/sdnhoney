@@ -1,0 +1,373 @@
+{% extends "base.html" %}
+
+{% block title %}System Components - SDN Honeypot Security System{% endblock %}
+
+{% block content %}
+<!-- Components Header -->
+<section class="py-5" style="background: rgba(0,0,0,0.3);">
+    <div class="container">
+        <div class="row text-center">
+            <div class="col-12">
+                <h1 class="display-4 fw-bold mb-3">
+                    <i class="fas fa-cubes text-primary"></i>
+                    System Components
+                </h1>
+                <p class="lead">
+                    Detailed overview of all components that make up the SDN Honeypot Security System
+                </p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Components Grid -->
+<section class="py-5">
+    <div class="container">
+        <div class="row g-4">
+            <!-- SDN Controller -->
+            <div class="col-lg-6">
+                <div class="card h-100">
+                    <div class="card-header">
+                        <h4 class="mb-0">
+                            <i class="fas fa-microchip text-primary"></i>
+                            SDN Controller (Ryu)
+                        </h4>
+                    </div>
+                    <div class="card-body">
+                        <p><strong>Port:</strong> 8080 | <strong>Protocol:</strong> OpenFlow 1.3</p>
+                        <p>The central brain of the system, responsible for intelligent traffic classification and dynamic flow management.</p>
+                        
+                        <h6>Key Features:</h6>
+                        <ul>
+                            <li>Real-time traffic analysis and classification</li>
+                            <li>Dynamic OpenFlow rule installation</li>
+                            <li>ML model integration for threat assessment</li>
+                            <li>RESTful API for system monitoring</li>
+                        </ul>
+                        
+                        <h6>API Endpoints:</h6>
+                        <div class="code-block">
+                            <code>GET /api/stats</code> - System statistics<br>
+                            <code>POST /api/classify</code> - Manual IP classification<br>
+                            <code>GET /api/flows</code> - Current flow rules
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Dashboard -->
+            <div class="col-lg-6">
+                <div class="card h-100">
+                    <div class="card-header">
+                        <h4 class="mb-0">
+                            <i class="fas fa-chart-line text-success"></i>
+                            Monitoring Dashboard
+                        </h4>
+                    </div>
+                    <div class="card-body">
+                        <p><strong>Port:</strong> 8090 | <strong>Framework:</strong> Flask</p>
+                        <p>Real-time monitoring interface for system visualization and analysis.</p>
+                        
+                        <h6>Features:</h6>
+                        <ul>
+                            <li>Live traffic visualization</li>
+                            <li>Threat classification displays</li>
+                            <li>System health monitoring</li>
+                            <li>Interactive host status tracking</li>
+                        </ul>
+                        
+                        <h6>Monitoring Capabilities:</h6>
+                        <div class="code-block">
+                            • Active IP tracking<br>
+                            • Suspicious/Malicious IP lists<br>
+                            • Real-time attack detection<br>
+                            • System performance metrics
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Normal Servers -->
+            <div class="col-lg-6">
+                <div class="card h-100">
+                    <div class="card-header">
+                        <h4 class="mb-0">
+                            <i class="fas fa-server text-info"></i>
+                            Normal Servers (h1, h2, h3)
+                        </h4>
+                    </div>
+                    <div class="card-body">
+                        <p><strong>Ports:</strong> 8001, 8002, 8003 | <strong>IPs:</strong> 10.0.0.1-3</p>
+                        <p>Legitimate web servers hosting normal business applications and services.</p>
+                        
+                        <h6>Server Details:</h6>
+                        <ul>
+                            <li><strong>h1 (10.0.0.1:8001):</strong> Primary web application</li>
+                            <li><strong>h2 (10.0.0.2:8002):</strong> Secondary service</li>
+                            <li><strong>h3 (10.0.0.3:8003):</strong> Backend API service</li>
+                        </ul>
+                        
+                        <h6>Security Features:</h6>
+                        <div class="code-block">
+                            • Normal user authentication<br>
+                            • Standard login pages<br>
+                            • Protected by SDN controller<br>
+                            • Traffic analysis integration
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Triage Honeypot -->
+            <div class="col-lg-6">
+                <div class="card h-100">
+                    <div class="card-header">
+                        <h4 class="mb-0">
+                            <i class="fas fa-filter text-warning"></i>
+                            Triage Honeypot (h4)
+                        </h4>
+                    </div>
+                    <div class="card-body">
+                        <p><strong>Port:</strong> 8004 | <strong>IP:</strong> 10.0.0.4</p>
+                        <p>Initial deception layer that captures suspicious traffic for ML analysis.</p>
+                        
+                        <h6>Primary Functions:</h6>
+                        <ul>
+                            <li>Mimics legitimate server interfaces</li>
+                            <li>Captures attack attempts and patterns</li>
+                            <li>Feeds data to ML model for classification</li>
+                            <li>Acts as first-level threat filter</li>
+                        </ul>
+                        
+                        <h6>ML Integration:</h6>
+                        <div class="code-block">
+                            • Real-time behavioral analysis<br>
+                            • Risk score calculation<br>
+                            • Binary classification (0/1)<br>
+                            • Controller feedback loop
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Deep Honeypot -->
+            <div class="col-lg-6">
+                <div class="card h-100">
+                    <div class="card-header">
+                        <h4 class="mb-0">
+                            <i class="fas fa-bug text-danger"></i>
+                            Deep Honeypot (h5)
+                        </h4>
+                    </div>
+                    <div class="card-body">
+                        <p><strong>Port:</strong> 8005 | <strong>IP:</strong> 10.0.0.5</p>
+                        <p>Advanced deception environment for confirmed malicious actors.</p>
+                        
+                        <h6>Advanced Features:</h6>
+                        <ul>
+                            <li>High-interaction honeypot environment</li>
+                            <li>Extended attacker engagement</li>
+                            <li>Advanced logging and analysis</li>
+                            <li>Malware collection capabilities</li>
+                        </ul>
+                        
+                        <h6>Deception Techniques:</h6>
+                        <div class="code-block">
+                            • Fake vulnerable services<br>
+                            • Simulated network resources<br>
+                            • Prolonged attacker engagement<br>
+                            • Detailed forensic logging
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- ML Model -->
+            <div class="col-lg-6">
+                <div class="card h-100">
+                    <div class="card-header">
+                        <h4 class="mb-0">
+                            <i class="fas fa-brain text-info"></i>
+                            Machine Learning Model
+                        </h4>
+                    </div>
+                    <div class="card-body">
+                        <p><strong>Type:</strong> Binary Classifier | <strong>Threshold:</strong> 0.6</p>
+                        <p>Intelligent behavioral analysis system for real-time threat classification.</p>
+                        
+                        <h6>Analysis Features:</h6>
+                        <ul>
+                            <li>Request frequency analysis</li>
+                            <li>Username pattern recognition</li>
+                            <li>User-agent analysis</li>
+                            <li>Rapid-fire detection</li>
+                        </ul>
+                        
+                        <h6>Risk Factors:</h6>
+                        <div class="code-block">
+                            • High frequency requests (+0.4)<br>
+                            • Suspicious usernames (+0.3)<br>
+                            • Bot user agents (+0.2)<br>
+                            • Scanner tools detection (+0.3)
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Network Topology -->
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header">
+                        <h4 class="mb-0">
+                            <i class="fas fa-network-wired text-primary"></i>
+                            Network Topology (Mininet)
+                        </h4>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <h6>Network Configuration:</h6>
+                                <ul>
+                                    <li><strong>Topology:</strong> Tree structure (depth=3)</li>
+                                    <li><strong>Switches:</strong> 7 OpenFlow switches</li>
+                                    <li><strong>Hosts:</strong> 6 virtual hosts</li>
+                                    <li><strong>Controller:</strong> Remote Ryu controller</li>
+                                </ul>
+                            </div>
+                            <div class="col-md-6">
+                                <h6>Host Assignments:</h6>
+                                <div class="code-block">
+                                    h1: 10.0.0.1 (Normal Server 1)<br>
+                                    h2: 10.0.0.2 (Normal Server 2)<br>
+                                    h3: 10.0.0.3 (Normal Server 3)<br>
+                                    h4: 10.0.0.4 (Triage Honeypot)<br>
+                                    h5: 10.0.0.5 (Deep Honeypot)<br>
+                                    h6: 10.0.0.6 (External Client)
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Component Status -->
+<section class="py-5" style="background: rgba(0,0,0,0.2);">
+    <div class="container">
+        <div class="row">
+            <div class="col-12 text-center mb-4">
+                <h2>Live Component Status</h2>
+                <p class="lead">Real-time status of all system components</p>
+            </div>
+        </div>
+        
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="d-flex align-items-center">
+                    <span class="status-indicator" id="controller-indicator"></span>
+                    <div>
+                        <h6>SDN Controller</h6>
+                        <small id="controller-text">Checking...</small>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="stat-card">
+                <div class="d-flex align-items-center">
+                    <span class="status-indicator" id="dashboard-indicator"></span>
+                    <div>
+                        <h6>Dashboard</h6>
+                        <small id="dashboard-text">Checking...</small>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="stat-card">
+                <div class="d-flex align-items-center">
+                    <span class="status-indicator" id="ml-indicator"></span>
+                    <div>
+                        <h6>ML Model</h6>
+                        <small id="ml-text">Checking...</small>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="stat-card">
+                <div class="d-flex align-items-center">
+                    <span class="status-indicator status-active"></span>
+                    <div>
+                        <h6>Network Topology</h6>
+                        <small>Configured (6 hosts, 7 switches)</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    updateComponentStatus();
+    
+    // Update status every 15 seconds
+    setInterval(updateComponentStatus, 15000);
+});
+
+function updateComponentStatus() {
+    fetch('/api/system-status')
+        .then(response => response.json())
+        .then(data => {
+            // Update controller status
+            const controllerIndicator = document.getElementById('controller-indicator');
+            const controllerText = document.getElementById('controller-text');
+            
+            if (data.controller.status === 'ACTIVE') {
+                controllerIndicator.className = 'status-indicator status-active';
+                controllerText.textContent = 'Online - Processing traffic';
+            } else {
+                controllerIndicator.className = 'status-indicator status-inactive';
+                controllerText.textContent = 'Offline - Not responding';
+            }
+            
+            // Update dashboard status
+            const dashboardIndicator = document.getElementById('dashboard-indicator');
+            const dashboardText = document.getElementById('dashboard-text');
+            
+            if (data.dashboard.status === 'ACTIVE') {
+                dashboardIndicator.className = 'status-indicator status-active';
+                dashboardText.textContent = 'Online - Monitoring active';
+            } else {
+                dashboardIndicator.className = 'status-indicator status-inactive';
+                dashboardText.textContent = 'Offline - Not responding';
+            }
+            
+            // Update ML model status
+            const mlIndicator = document.getElementById('ml-indicator');
+            const mlText = document.getElementById('ml-text');
+            
+            if (data.ml_model.status === 'OPERATIONAL') {
+                mlIndicator.className = 'status-indicator status-active';
+                mlText.textContent = 'Operational - Ready for analysis';
+            } else {
+                mlIndicator.className = 'status-indicator status-inactive';
+                mlText.textContent = 'Inactive - Controller offline';
+            }
+        })
+        .catch(error => {
+            console.error('Error updating component status:', error);
+            
+            // Set all to unknown state
+            document.getElementById('controller-indicator').className = 'status-indicator status-warning';
+            document.getElementById('controller-text').textContent = 'Status unknown';
+            document.getElementById('dashboard-indicator').className = 'status-indicator status-warning';
+            document.getElementById('dashboard-text').textContent = 'Status unknown';
+            document.getElementById('ml-indicator').className = 'status-indicator status-warning';
+            document.getElementById('ml-text').textContent = 'Status unknown';
+        });
+}
+</script>
+{% endblock %} 
