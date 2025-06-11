@@ -1,0 +1,48 @@
+# Live Demo Environment Dockerfile
+FROM ubuntu:20.04
+
+# Prevent interactive prompts during build
+ENV DEBIAN_FRONTEND=noninteractive
+
+# Install required packages
+RUN apt-get update && apt-get install -y \
+    python3 \
+    python3-pip \
+    mininet \
+    openvswitch-switch \
+    curl \
+    net-tools \
+    iputils-ping \
+    iproute2 \
+    sudo \
+    supervisor \
+    && rm -rf /var/lib/apt/lists/*
+
+# Install Python dependencies
+COPY requirements.txt /tmp/
+RUN pip3 install -r /tmp/requirements.txt
+
+# Create app directory
+WORKDIR /app
+
+# Copy the entire SDN honeypot project
+COPY . /app/
+
+# Create logs directory
+RUN mkdir -p /app/logs
+
+# Copy supervisor configuration
+COPY docker/supervisord.conf /etc/supervisor/conf.d/supervisord.conf
+
+# Create startup script
+COPY docker/start-demo.sh /start-demo.sh
+RUN chmod +x /start-demo.sh
+
+# Expose ports for services
+EXPOSE 8001 8002 8003 8004 8005 8080 6653
+
+# Set working directory
+WORKDIR /app
+
+# Start supervisor to manage all services
+CMD ["/usr/bin/supervisord", "-c", "/etc/supervisor/conf.d/supervisord.conf"] 

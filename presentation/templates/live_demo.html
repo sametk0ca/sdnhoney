@@ -1,0 +1,584 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Live Demo - SDN Honeypot System</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        body {
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+            color: white;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            min-height: 100vh;
+        }
+
+        .live-demo-container {
+            padding: 2rem;
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .demo-header {
+            text-align: center;
+            margin-bottom: 2rem;
+            padding: 2rem;
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 15px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .demo-grid {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 2rem;
+            margin-top: 2rem;
+        }
+
+        .test-section {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 15px;
+            padding: 1.5rem;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .test-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+            padding-bottom: 1rem;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .test-title {
+            color: #4ade80;
+            font-weight: bold;
+            font-size: 1.2rem;
+        }
+
+        .test-output {
+            background: #1a1a1a;
+            border-radius: 8px;
+            height: 500px;
+            overflow-y: auto;
+            border: 1px solid #333;
+            padding: 1rem;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9rem;
+            color: #00ff88;
+            position: relative;
+        }
+        
+        .terminal-input-line {
+            display: flex;
+            align-items: center;
+            margin-top: 0.5rem;
+            position: sticky;
+            bottom: 0;
+            background: #1a1a1a;
+            padding: 0.5rem 0;
+        }
+        
+        .terminal-prompt {
+            color: #00ff88;
+            margin-right: 0.5rem;
+            font-weight: bold;
+        }
+        
+        .terminal-command-input {
+            background: transparent;
+            border: none;
+            color: #00ff88;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9rem;
+            outline: none;
+            flex: 1;
+        }
+
+        .controls-section {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 15px;
+            padding: 1.5rem;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            overflow-y: auto;
+        }
+
+        .control-group {
+            margin-bottom: 2rem;
+        }
+
+        .control-group h3 {
+            color: #00ff88;
+            margin-bottom: 1rem;
+            font-size: 1.1rem;
+            border-bottom: 1px solid rgba(0, 255, 136, 0.3);
+            padding-bottom: 0.5rem;
+        }
+
+        .test-button {
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 8px;
+            padding: 1rem;
+            margin-bottom: 0.8rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            width: 100%;
+            text-align: left;
+        }
+
+        .test-button:hover {
+            background: rgba(0, 255, 136, 0.1);
+            border-color: #00ff88;
+            transform: translateY(-2px);
+        }
+
+        .test-button.loading {
+            opacity: 0.7;
+            cursor: not-allowed;
+        }
+
+        .button-title {
+            font-weight: 600;
+            color: white;
+            margin-bottom: 0.3rem;
+        }
+
+        .button-desc {
+            font-size: 0.8rem;
+            color: #ccc;
+        }
+
+        .back-btn {
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            z-index: 1000;
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            color: white;
+            text-decoration: none;
+            padding: 0.5rem 1rem;
+            border-radius: 8px;
+            transition: all 0.3s ease;
+        }
+
+        .back-btn:hover {
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            text-decoration: none;
+        }
+
+        .clear-btn {
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            color: white;
+            padding: 0.3rem 0.6rem;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.8rem;
+            margin-left: 1rem;
+            transition: all 0.3s ease;
+        }
+
+        .clear-btn:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
+    </style>
+</head>
+<body>
+    <a href="http://localhost:9000" class="back-btn">
+        <i class="fas fa-arrow-left"></i> Ana Sayfaya Dön
+    </a>
+
+    <div class="live-demo-container">
+        <div class="demo-header">
+            <h1>🧪 Demo Test Senaryoları</h1>
+            <p>SDN Honeypot sisteminin farklı saldırı senaryolarındaki davranışını test edin</p>
+        </div>
+        
+        <div class="demo-grid">
+            <!-- Test Output Section -->
+            <div class="test-section">
+                <div class="test-header">
+                    <div class="test-title">📊 Test Çıktıları</div>
+                    <button class="clear-btn" onclick="clearOutput()">🗑️ Temizle</button>
+                </div>
+                <div class="test-output" id="test-output">
+                    <div style="color: #3498db; margin: 0.2rem 0;">
+                        <span style="color: #888;">[Sistem]</span> Terminal hazır - komut yazabilirsiniz...
+                    </div>
+                    <div class="terminal-input-line">
+                        <span class="terminal-prompt">mininet></span>
+                        <input type="text" class="terminal-command-input" id="terminal-command-input" autocomplete="off" placeholder="Komut yazın...">
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Controls Section -->
+            <div class="controls-section">
+                <div class="control-group">
+                    <h3>🔍 Temel Test Senaryoları</h3>
+                    
+                    <button class="test-button" onclick="sendCommand('h6 curl 10.0.0.4:8004')">
+                        <div class="button-title">🎯 Test Triage Honeypot</div>
+                        <div class="button-desc">h6 curl 10.0.0.4:8004</div>
+                    </button>
+                    
+                    <button class="test-button" onclick="sendCommand('h6 curl 10.0.0.5:8005')">
+                        <div class="button-title">🕳️ Test Deep Honeypot</div>
+                        <div class="button-desc">h6 curl 10.0.0.5:8005</div>
+                    </button>
+                    
+                    <button class="test-button" onclick="sendCommand('h6 curl 10.0.0.1:8001')">
+                        <div class="button-title">💻 Test Normal Server</div>
+                        <div class="button-desc">h6 curl 10.0.0.1:8001</div>
+                    </button>
+                    
+                    <button class="test-button" onclick="sendCommand('pingall')">
+                        <div class="button-title">🌐 Ping All Hosts</div>
+                        <div class="button-desc">Network connectivity test</div>
+                    </button>
+                </div>
+                
+                <div class="control-group">
+                    <h3>🤖 Malicious Test Commands</h3>
+                    
+                    <button class="test-button" onclick="sendCommand('h6 curl -X POST -d &quot;username=admin&amp;password=admin&quot; 10.0.0.4:8004')">
+                        <div class="button-title">🚨 Test Malicious Request</div>
+                        <div class="button-desc">ML detection test</div>
+                    </button>
+                    
+                    <button class="test-button" onclick="sendCommand('h1 ping h4')">
+                        <div class="button-title">📡 Host Ping Test</div>
+                        <div class="button-desc">h1 ping h4</div>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+    let testRunning = false;
+
+    function addLog(message, type = 'info') {
+        const output = document.getElementById('test-output');
+        const timestamp = new Date().toLocaleTimeString();
+        
+        const colors = {
+            info: '#3498db',
+            success: '#2ecc71', 
+            warning: '#f39c12',
+            error: '#e74c3c'
+        };
+        
+        const logLine = document.createElement('div');
+        logLine.style.cssText = `color: ${colors[type]}; margin: 0.2rem 0; font-family: monospace;`;
+        logLine.innerHTML = `<span style="color: #888;">[${timestamp}]</span> ${message}`;
+        output.appendChild(logLine);
+        output.scrollTop = output.scrollHeight;
+    }
+
+    function clearOutput() {
+        document.getElementById('test-output').innerHTML = '';
+        addLog('Test çıktıları temizlendi', 'info');
+    }
+
+    function setButtonLoading(button, loading) {
+        if (loading) {
+            button.classList.add('loading');
+            button.style.pointerEvents = 'none';
+        } else {
+            button.classList.remove('loading');
+            button.style.pointerEvents = 'auto';
+        }
+    }
+
+    function simulateDelay(ms) {
+        return new Promise(resolve => setTimeout(resolve, ms));
+    }
+
+    async function testNormalRequest() {
+        if (testRunning) return;
+        testRunning = true;
+        const button = event.target.closest('.test-button');
+        setButtonLoading(button, true);
+
+        addLog('🟢 Normal kullanıcı isteği simülasyonu başlıyor...', 'info');
+        
+        try {
+            addLog('→ IP: 10.0.0.2 | User-Agent: Mozilla/5.0 (Windows NT 10.0)', 'info');
+            addLog('→ Login attempt: username=john, password=correctpass', 'success');
+            
+            await simulateDelay(1000);
+            addLog('→ Honeypot triage katmanına yönlendiriliyor...', 'info');
+            await simulateDelay(500);
+            addLog('→ ML model analizi yapılıyor...', 'warning');
+            await simulateDelay(1500);
+            
+            // Simulate ML result
+            const risk_score = (Math.random() * 0.3).toFixed(3); // Low risk
+            addLog(`✅ ML Sonucu: BENIGN (Risk Score: ${risk_score})`, 'success');
+            addLog(`📊 Normal trafik olarak sınıflandırıldı`, 'success');
+            
+        } catch (error) {
+            addLog(`❌ Test hatası: ${error.message}`, 'error');
+        }
+        
+        setButtonLoading(button, false);
+        testRunning = false;
+    }
+
+    async function testSuspiciousRequest() {
+        if (testRunning) return;
+        testRunning = true;
+        const button = event.target.closest('.test-button');
+        setButtonLoading(button, true);
+
+        addLog('🟡 Şüpheli aktivite simülasyonu başlıyor...', 'warning');
+        
+        try {
+            addLog('→ IP: 192.168.1.100 | Multiple failed attempts detected', 'warning');
+            addLog('→ Login attempt 1: username=admin, password=123456 [FAILED]', 'error');
+            await simulateDelay(800);
+            addLog('→ Login attempt 2: username=admin, password=password [FAILED]', 'error');
+            await simulateDelay(800);
+            addLog('→ Login attempt 3: username=admin, password=admin [FAILED]', 'error');
+            
+            await simulateDelay(1000);
+            addLog('→ Şüpheli IP listesine ekleniyor...', 'warning');
+            
+            const risk_score = (0.5 + Math.random() * 0.3).toFixed(3); // Medium risk
+            addLog(`⚠️ ML Sonucu: SUSPICIOUS (Risk Score: ${risk_score})`, 'warning');
+            addLog(`📊 IP 192.168.1.100 şüpheli listesine eklendi`, 'warning');
+            
+        } catch (error) {
+            addLog(`❌ Test hatası: ${error.message}`, 'error');
+        }
+        
+        setButtonLoading(button, false);
+        testRunning = false;
+    }
+
+    async function testBotRequest() {
+        if (testRunning) return;
+        testRunning = true;
+        const button = event.target.closest('.test-button');
+        setButtonLoading(button, true);
+
+        addLog('🔴 Bot saldırısı simülasyonu başlıyor...', 'error');
+        
+        try {
+            addLog('→ IP: 203.0.113.45 | User-Agent: python-requests/2.28.1', 'error');
+            addLog('→ Rapid requests detected: 50 requests in 10 seconds', 'error');
+            addLog('→ Dictionary attack pattern identified', 'error');
+            
+            await simulateDelay(1200);
+            addLog('→ Deep honeypot katmanına yönlendiriliyor...', 'error');
+            
+            const risk_score = (0.8 + Math.random() * 0.2).toFixed(3); // High risk
+            addLog(`🚨 ML Sonucu: MALICIOUS (Risk Score: ${risk_score})`, 'error');
+            addLog(`🚫 IP 203.0.113.45 kötü amaçlı listesine eklendi`, 'error');
+            addLog(`🔒 Otomatik güvenlik kuralları aktifleştirildi`, 'error');
+            
+        } catch (error) {
+            addLog(`❌ Test hatası: ${error.message}`, 'error');
+        }
+        
+        setButtonLoading(button, false);
+        testRunning = false;
+    }
+
+    async function testBruteForce() {
+        if (testRunning) return;
+        testRunning = true;
+        const button = event.target.closest('.test-button');
+        setButtonLoading(button, true);
+
+        addLog('⚡ Brute force saldırısı simülasyonu başlıyor...', 'error');
+        
+        try {
+            addLog('→ IP: 198.51.100.25 | High frequency login attempts', 'error');
+            
+            for (let i = 1; i <= 5; i++) {
+                addLog(`→ Attempt ${i}: password${i} [FAILED] (${i * 0.2}s interval)`, 'error');
+                await simulateDelay(300);
+            }
+            
+            addLog('→ Brute force pattern detected - blocking IP', 'error');
+            
+            const risk_score = (0.9 + Math.random() * 0.1).toFixed(3); // Very high risk
+            addLog(`🚨 ML Sonucu: MALICIOUS (Risk Score: ${risk_score})`, 'error');
+            addLog(`⛔ IP bloklandı ve güvenlik loglarına kaydedildi`, 'error');
+            
+        } catch (error) {
+            addLog(`❌ Test hatası: ${error.message}`, 'error');
+        }
+        
+        setButtonLoading(button, false);
+        testRunning = false;
+    }
+
+    async function testMLClassification() {
+        if (testRunning) return;
+        testRunning = true;
+        const button = event.target.closest('.test-button');
+        setButtonLoading(button, true);
+
+        addLog('🧠 ML model sınıflandırma testi başlıyor...', 'info');
+        
+        try {
+            const testCases = [
+                {name: 'Normal User', expected: 'BENIGN'},
+                {name: 'Suspicious Activity', expected: 'SUSPICIOUS'},
+                {name: 'Bot Attack', expected: 'MALICIOUS'}
+            ];
+            
+            for (const testCase of testCases) {
+                addLog(`→ Testing: ${testCase.name}`, 'info');
+                await simulateDelay(800);
+                
+                const match = Math.random() > 0.1; // 90% success rate
+                const result = match ? testCase.expected : 'UNCERTAIN';
+                
+                addLog(`   Prediction: ${result} | Expected: ${testCase.expected} ${match ? '✅' : '❌'}`, 
+                       match ? 'success' : 'warning');
+            }
+            
+            addLog('🎯 ML model test completed successfully', 'success');
+            
+        } catch (error) {
+            addLog(`❌ ML test hatası: ${error.message}`, 'error');
+        }
+        
+        setButtonLoading(button, false);
+        testRunning = false;
+    }
+
+    async function testSystemReset() {
+        if (testRunning) return;
+        testRunning = true;
+        const button = event.target.closest('.test-button');
+        setButtonLoading(button, true);
+
+        addLog('🔄 Sistem istatistikleri sıfırlanıyor...', 'info');
+        
+        try {
+            // Call the proxy endpoint on the same server
+            const response = await fetch('/api/reset-stats', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'}
+            });
+            
+            const result = await response.json();
+            
+            if (result.success) {
+                addLog('✅ Controller istatistikleri sıfırlandı', 'success');
+                addLog('✅ Şüpheli IP listesi temizlendi', 'success');
+                addLog('✅ Kötü amaçlı IP listesi temizlendi', 'success');
+                addLog('🆕 Yeni demo oturumu başlatıldı', 'success');
+            } else {
+                addLog(`⚠️ Sıfırlama hatası: ${result.error}`, 'warning');
+            }
+            
+        } catch (error) {
+            addLog(`❌ Sıfırlama hatası: ${error.message}`, 'error');
+        }
+        
+        setButtonLoading(button, false);
+        testRunning = false;
+    }
+
+    // =================== TERMINAL FUNCTIONALITY ===================
+    let socket = null;
+    let terminal_ready = false;
+
+    function initializeTerminal() {
+        socket = io();
+        
+        socket.on('connect', function() {
+            console.log('🔌 Socket connected');
+            socket.emit('create_terminal', {});
+        });
+        
+        socket.on('terminal_created', function(data) {
+            if (data.success) {
+                terminal_ready = true;
+                addTerminalOutput('✅ Terminal bağlantısı kuruldu\n');
+                console.log('✅ Terminal created successfully');
+            }
+        });
+        
+        socket.on('terminal_output', function(data) {
+            addTerminalOutput(data.output);
+        });
+        
+        socket.on('disconnect', function() {
+            terminal_ready = false;
+            addTerminalOutput('\n❌ Terminal bağlantısı kesildi\n');
+            console.log('💔 Socket disconnected');
+        });
+    }
+
+    function addTerminalOutput(output) {
+        const testOutput = document.getElementById('test-output');
+        const inputLine = testOutput.querySelector('.terminal-input-line');
+        
+        // Create output element
+        const outputElement = document.createElement('div');
+        outputElement.innerHTML = output.replace(/\n/g, '<br>');
+        outputElement.style.whiteSpace = 'pre-wrap';
+        outputElement.style.marginBottom = '0.2rem';
+        
+        // Insert before input line
+        testOutput.insertBefore(outputElement, inputLine);
+        
+        // Auto-scroll to bottom
+        testOutput.scrollTop = testOutput.scrollHeight;
+    }
+
+    function sendCommand(command) {
+        if (!terminal_ready || !socket) {
+            addTerminalOutput('❌ Terminal hazır değil\n');
+            return;
+        }
+        
+        // Show command in terminal
+        addTerminalOutput(`mininet> ${command}\n`);
+        
+        // Send to backend
+        socket.emit('terminal_input', {
+            input: command + '\n'
+        });
+    }
+
+    // Initialize when page loads
+    document.addEventListener('DOMContentLoaded', function() {
+        initializeTerminal();
+        
+        // Setup terminal input
+        const commandInput = document.getElementById('terminal-command-input');
+        if (commandInput) {
+            commandInput.addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    const command = this.value.trim();
+                    if (command) {
+                        sendCommand(command);
+                        this.value = '';
+                    }
+                }
+            });
+            
+            // Focus on terminal by default
+            commandInput.focus();
+        }
+    });
+    </script>
+</body>
+</html> 

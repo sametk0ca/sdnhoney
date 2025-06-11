@@ -205,14 +205,16 @@ class HoneypotSDNController(app_manager.RyuApp):
         self.traffic_stats[src_ip]['packets'] += 1
         self.traffic_stats[src_ip]['last_seen'] = current_time
         
-        # Analyze traffic for HTTP requests (TCP port 80, 8001-8005)
+        # Temporarily disable web traffic handling for debugging
+        # Regular L2 switching for all traffic
+        self._l2_switching(datapath, pkt, in_port, msg)
+        
+        # Log web traffic attempts for debugging
         tcp_pkt = pkt.get_protocol(tcp.tcp)
         if tcp_pkt and tcp_pkt.dst_port in [80, 8001, 8002, 8003, 8004, 8005]:
-            classification = self._classify_traffic(src_ip, dst_ip, tcp_pkt)
-            self._handle_web_traffic(datapath, pkt, in_port, src_ip, dst_ip, classification, msg)
-        else:
-            # Regular L2 switching for non-web traffic
-            self._l2_switching(datapath, pkt, in_port, msg)
+            self.logger.info(f"Web traffic detected: {src_ip}:{tcp_pkt.src_port} -> {dst_ip}:{tcp_pkt.dst_port}")
+            # classification = self._classify_traffic(src_ip, dst_ip, tcp_pkt)
+            # self._handle_web_traffic(datapath, pkt, in_port, src_ip, dst_ip, classification, msg)
 
     def _classify_traffic(self, src_ip, dst_ip, tcp_pkt):
         """Classify traffic as normal, suspicious, or malicious"""
@@ -612,6 +614,53 @@ class HoneypotController(ControllerBase):
         
         return Response(content_type='application/json',
                       body=json.dumps(stats).encode('utf-8'))
+
+    @route('api', '/api/reset-stats', methods=['POST'])
+    def reset_stats(self, req, **kwargs):
+        """Reset controller statistics for fresh demo session"""
+        try:
+            # Clear suspicious and malicious IP lists
+            self.controller.suspicious_ips.clear()
+            self.controller.malicious_ips.clear()
+            
+            # Keep baseline IPs in traffic_stats but clear other dynamic IPs
+            baseline_ips = {'10.0.0.1', '10.0.0.2', '10.0.0.3', '10.0.0.4', '10.0.0.5', '10.0.0.6'}
+            current_time = time.time()
+            
+            # Remove non-baseline traffic stats
+            self.controller.traffic_stats = {
+                ip: stats for ip, stats in self.controller.traffic_stats.items() 
+                if ip in baseline_ips
+            }
+            
+            # Reset baseline IP last_seen times to current time
+            for ip in baseline_ips:
+                if ip in self.controller.traffic_stats:
+                    self.controller.traffic_stats[ip]['last_seen'] = current_time
+            
+            # Clear flow stats
+            self.controller.flow_stats.clear()
+            
+            self.controller.logger.info("🔄 Statistics reset for new demo session")
+            
+            return Response(content_type='application/json',
+                          body=json.dumps({
+                              'status': 'success',
+                              'message': 'Statistics reset successfully',
+                              'cleared': {
+                                  'suspicious_ips': True,
+                                  'malicious_ips': True,
+                                  'dynamic_traffic_stats': True,
+                                  'flow_stats': True
+                              },
+                              'retained': {
+                                  'baseline_ips': list(baseline_ips)
+                              }
+                          }).encode('utf-8'))
+        except Exception as e:
+            return Response(content_type='application/json',
+                          body=json.dumps({'status': 'error', 'message': str(e)}).encode('utf-8'),
+                          status=500)
 
 
 if __name__ == '__main__':

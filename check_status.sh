@@ -71,7 +71,7 @@ echo -e "${CYAN}🎮 Core Components:${NC}"
 check_service 6653 "SDN Controller" "Ryu OpenFlow controller" "localhost" && running_count=$((running_count + 1))
 total_count=$((total_count + 1))
 
-check_service 8080 "Controller API" "REST API for controller" "localhost" && running_count=$((running_count + 1))
+check_service 8080 "Controller REST API" "SDN controller REST interface" "localhost/api/stats" && running_count=$((running_count + 1))
 total_count=$((total_count + 1))
 
 echo ""
@@ -79,9 +79,6 @@ echo ""
 # Web Interfaces
 echo -e "${CYAN}🌐 Web Interfaces:${NC}"
 check_service 9000 "Presentation" "Academic presentation website" "localhost" && running_count=$((running_count + 1))
-total_count=$((total_count + 1))
-
-check_service 8090 "Dashboard" "Real-time monitoring dashboard" "localhost" && running_count=$((running_count + 1))
 total_count=$((total_count + 1))
 
 echo ""
@@ -151,8 +148,7 @@ elif [ $running_count -lt $total_count ]; then
 else
     echo -e "${BLUE}💡 Access URLs:${NC}"
     echo "   • Presentation: http://localhost:9000"
-    echo "   • Dashboard: http://localhost:8090"
-    echo "   • Controller API: http://localhost:8080/api/status"
+    echo "   • Controller API: http://localhost:8080/api/stats"
 fi
 
 echo "" 

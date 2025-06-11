@@ -26,7 +26,20 @@
         <div class="architecture-diagram">
             <h2 class="text-center mb-4">Complete System Architecture</h2>
             
-            <!-- Network Topology -->
+            <!-- Network Topology Diagram -->
+            <div class="row mb-5">
+                <div class="col-12 text-center">
+                    <div class="topology-diagram-container p-4" style="background: #2a3642; border-radius: 10px;">
+                        <img src="{{ url_for('static', filename='images/networktopology.jpg') }}" 
+                             alt="SDN Honeypot Network Topology" 
+                             class="img-fluid" 
+                             style="max-width: 100%; height: auto; border-radius: 8px;">
+                        <p class="mt-3" style="color: white;">Network topology showing the complete SDN architecture with switches, hosts, and services</p>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Component Overview -->
             <div class="row mb-5">
                 <!-- External Client -->
                 <div class="col-md-2 text-center">

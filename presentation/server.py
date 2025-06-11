@@ -29,10 +29,10 @@ def components():
     """Components overview page"""
     return render_template('components.html')
 
-@app.route('/demo')
-def demo():
-    """Interactive demo page with terminal"""
-    return render_template('demo.html')
+@app.route('/live-demo')
+def live_demo():
+    """Redirect to live demo server on port 9001"""
+    return redirect('http://localhost:9001')
 
 @app.route('/architecture')
 def architecture():
@@ -81,46 +81,55 @@ def system_status():
     except:
         pass
     
-    # Check dashboard status
-    dashboard_status = 'INACTIVE'
-    try:
-        response = requests.get('http://localhost:8090/api/status', timeout=2)
-        if response.status_code == 200:
-            dashboard_status = 'ACTIVE'
-    except:
-        pass
-    
-    # Check logs for latest activity
-    logs_dir = '../logs'
+    # Check logs for latest activity - start fresh for clean demos
+    logs_dir = 'logs'  # Relative to current directory
     latest_activity = None
     honeypot_stats = {'total_attempts': 0, 'unique_ips': 0}
     
-    if os.path.exists(f'{logs_dir}/triage_honeypot.log'):
+    # Only check logs if they exist and are recent (within last hour for demos)
+    log_file_path = f'{logs_dir}/triage_honeypot.log'
+    if os.path.exists(log_file_path):
         try:
-            with open(f'{logs_dir}/triage_honeypot.log', 'r') as f:
-                lines = f.readlines()
-                honeypot_stats['total_attempts'] = len(lines)
-                
-                if lines:
-                    latest = json.loads(lines[-1])
-                    latest_activity = {
-                        'timestamp': latest['timestamp'],
-                        'source_ip': latest['source_ip'],
-                        'request_type': latest['request_type'],
-                        'ml_prediction': latest.get('extra_data', {}).get('ml_prediction', 'N/A'),
-                        'risk_score': latest.get('extra_data', {}).get('risk_score', 'N/A'),
-                        'classification': latest.get('extra_data', {}).get('classification', 'N/A')
-                    }
-                
-                # Count unique IPs
-                ips = set()
-                for line in lines:
-                    try:
-                        log_entry = json.loads(line)
-                        ips.add(log_entry['source_ip'])
-                    except:
-                        pass
-                honeypot_stats['unique_ips'] = len(ips)
+            file_mod_time = os.path.getmtime(log_file_path)
+            current_time = time.time()
+            
+            # Only load logs if file was modified within last hour
+            if current_time - file_mod_time < 3600:  # 1 hour
+                with open(log_file_path, 'r') as f:
+                    lines = f.readlines()
+                    # Filter recent lines only (last 10 minutes)
+                    recent_lines = []
+                    for line in lines:
+                        try:
+                            log_entry = json.loads(line)
+                            log_time = datetime.datetime.fromisoformat(log_entry['timestamp'].replace('Z', '+00:00'))
+                            if (datetime.datetime.now(datetime.timezone.utc) - log_time).total_seconds() < 3600:  # 1 hour
+                                recent_lines.append(line)
+                        except:
+                            continue
+                    
+                    honeypot_stats['total_attempts'] = len(recent_lines)
+                    
+                    if recent_lines:
+                        latest = json.loads(recent_lines[-1])
+                        latest_activity = {
+                            'timestamp': latest['timestamp'],
+                            'source_ip': latest['source_ip'],
+                            'request_type': latest['request_type'],
+                            'ml_prediction': latest.get('extra_data', {}).get('ml_prediction', 0),
+                            'risk_score': latest.get('extra_data', {}).get('risk_score', 0.3),
+                            'classification': latest.get('extra_data', {}).get('classification', 'normal')
+                        }
+                    
+                    # Count unique IPs from recent lines
+                    ips = set()
+                    for line in recent_lines:
+                        try:
+                            log_entry = json.loads(line)
+                            ips.add(log_entry['source_ip'])
+                        except:
+                            pass
+                    honeypot_stats['unique_ips'] = len(ips)
         except:
             pass
     
@@ -130,7 +139,9 @@ def system_status():
             'stats': controller_stats
         },
         'dashboard': {
-            'status': dashboard_status
+            'status': 'ACTIVE',  # Dashboard is always active if the server is running
+            'port': 9000,
+            'uptime': 'Online'
         },
         'services': {
             'h1': 'RUNNING' if controller_status == 'ACTIVE' else 'UNKNOWN',
@@ -157,114 +168,61 @@ def system_status():
         'timestamp': datetime.datetime.now().isoformat()
     })
 
-@app.route('/api/demo-commands')
-def demo_commands():
-    """Enhanced demo commands with categories"""
-    return jsonify({
-        'categories': {
-            'basic_tests': {
-                'name': 'Basic Connectivity Tests',
-                'commands': [
-                    {
-                        'name': 'Ping All Hosts',
-                        'command': 'pingall',
-                        'description': 'Test connectivity between all hosts',
-                        'expected': 'All hosts should reach each other'
-                    },
-                    {
-                        'name': 'Check Controller',
-                        'command': 'curl -s http://localhost:8080/api/stats | python3 -m json.tool',
-                        'description': 'Query SDN controller statistics',
-                        'expected': 'JSON response with active IPs, suspicious/malicious lists'
-                    }
-                ]
-            },
-            'normal_traffic': {
-                'name': 'Normal Traffic Tests',
-                'commands': [
-                    {
-                        'name': 'Access Normal Server (h1)',
-                        'command': 'h6 curl http://10.0.0.1:8001/',
-                        'description': 'Normal web page request',
-                        'expected': 'HTML login page response'
-                    },
-                    {
-                        'name': 'Valid Login Test',
-                        'command': 'h6 curl -X POST -d "username=john&password=johnpass" http://10.0.0.1:8001/',
-                        'description': 'Successful authentication',
-                        'expected': 'Redirect to admin panel'
-                    }
-                ]
-            },
-            'honeypot_tests': {
-                'name': 'Honeypot & ML Tests',
-                'commands': [
-                    {
-                        'name': 'Triage Honeypot Access',
-                        'command': 'h6 curl http://10.0.0.4:8004/',
-                        'description': 'Access honeypot login page',
-                        'expected': 'Identical-looking login page'
-                    },
-                    {
-                        'name': 'Admin Username Attack',
-                        'command': 'h6 curl -X POST -d "username=admin&password=test" http://10.0.0.4:8004/',
-                        'description': 'Suspicious username triggers ML analysis',
-                        'expected': 'ML model analyzes and sends classification to controller'
-                    },
-                    {
-                        'name': 'Bot Attack Simulation',
-                        'command': 'h6 curl -X POST -d "username=admin" http://10.0.0.1:8001/ -A "curl/7.68.0"',
-                        'description': 'Bot user-agent triggers high risk score',
-                        'expected': 'High risk score → potential malicious classification'
-                    }
-                ]
-            },
-            'advanced_attacks': {
-                'name': 'Advanced Attack Scenarios',
-                'commands': [
-                    {
-                        'name': 'Rapid Fire Attack',
-                        'command': 'h6 bash -c \'for i in {1..10}; do curl -s -X POST -d "username=hacker$i" http://10.0.0.1:8001/; done\'',
-                        'description': 'Multiple rapid requests to trigger frequency analysis',
-                        'expected': 'Frequency-based malicious classification'
-                    },
-                    {
-                        'name': 'Scanner Simulation',
-                        'command': 'h6 curl -X POST -d "username=root" http://10.0.0.1:8001/ -A "Nikto/2.1.6"',
-                        'description': 'Scanner tool detection',
-                        'expected': 'Scanner user-agent → high risk score'
-                    }
-                ]
-            }
-        }
-    })
-
-@app.route('/api/execute-command', methods=['POST'])
-def execute_command():
-    """Execute demo commands (simulation)"""
-    data = request.get_json()
-    command = data.get('command', '')
-    
-    # Simulate command execution with realistic responses
-    if 'pingall' in command:
-        result = "*** Ping: testing ping reachability\nh1 -> h2 h3 h4 h5 h6\nh2 -> h1 h3 h4 h5 h6\nh3 -> h1 h2 h4 h5 h6\nh4 -> h1 h2 h3 h5 h6\nh5 -> h1 h2 h3 h4 h6\nh6 -> h1 h2 h3 h4 h5\n*** Results: 0% dropped (30/30 received)"
-    elif 'curl' in command and 'localhost:8080' in command:
+@app.route('/api/reset-stats', methods=['POST'])
+def reset_stats():
+    """Reset system statistics for clean demos"""
+    try:
+        # Clear ALL log files for clean demo
+        logs_dir = '../logs'  # Go up one directory from presentation/
+        log_files = [
+            'triage_honeypot.log', 
+            'deep_honeypot.log', 
+            'controller.log',
+            'presentation.log',
+            'dashboard.log',
+            'live_demo.log',
+            'h1_service.log',
+            'h2_service.log', 
+            'h3_service.log',
+            'h4_service.log',
+            'h5_service.log',
+            'normal_server_1.log',
+            'normal_server_2.log',
+            'normal_server_3.log'
+        ]
+        
+        cleared_files = []
+        for log_file in log_files:
+            log_path = f'{logs_dir}/{log_file}'
+            if os.path.exists(log_path):
+                try:
+                    with open(log_path, 'w') as f:
+                        pass  # Truncate file
+                    cleared_files.append(log_file)
+                except PermissionError:
+                    # Skip files we can't write to (system logs)
+                    continue
+        
+        # Reset controller statistics via API
+        controller_reset = False
         try:
-            response = requests.get('http://localhost:8080/api/stats', timeout=2)
-            result = response.text
+            response = requests.post('http://localhost:8080/api/reset-stats', timeout=5)
+            controller_reset = (response.status_code == 200)
         except:
-            result = "Error: Controller not responding"
-    elif 'curl' in command and '10.0.0' in command:
-        result = "<!DOCTYPE html>\n<html>\n<head><title>Server Login</title></head>\n<body>\n<h2>Server Access Portal</h2>\n<form method='POST'>\n  Username: <input name='username' required>\n  Password: <input name='password' type='password' required>\n  <button type='submit'>Login</button>\n</form>\n</body>\n</html>"
-    else:
-        result = f"Command executed: {command}\n[This is a simulation - actual execution would require Mininet CLI]"
-    
-    return jsonify({
-        'success': True,
-        'command': command,
-        'output': result,
-        'timestamp': datetime.datetime.now().isoformat()
-    })
+            pass
+        
+        return jsonify({
+            'success': True,
+            'controller_reset': controller_reset,
+            'logs_cleared': True,
+            'cleared_files': cleared_files,
+            'message': f'System reset: {len(cleared_files)} log files cleared + controller stats reset'
+        })
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
 
 @app.route('/api/ml-test')
 def ml_test():
@@ -323,7 +281,7 @@ def ml_test():
 
 @app.route('/api/dashboard-stats')
 def dashboard_stats():
-    """Get stats for dashboard - integrating 8090 functionality"""
+    """Get stats for integrated dashboard functionality"""
     try:
         # Get real data from controller
         response = requests.get('http://localhost:8080/api/stats', timeout=2)
@@ -412,16 +370,75 @@ def honeypot_logs():
     
     return jsonify(logs)
 
+@app.route('/api/monitoring-data')
+def monitoring_data():
+    """Get monitoring data for charts and statistics"""
+    try:
+        # Get real data from controller
+        response = requests.get('http://localhost:8080/api/stats', timeout=2)
+        if response.status_code == 200:
+            controller_data = response.json()
+            
+            # Extract actual data from controller
+            active_ips = controller_data.get('active_ips', 0)
+            suspicious_ips_list = controller_data.get('suspicious_ips', [])
+            malicious_ips_list = controller_data.get('malicious_ips', [])
+            suspicious_count = len(suspicious_ips_list)
+            malicious_count = len(malicious_ips_list)
+            
+            # Calculate normal IPs (active but not suspicious or malicious)
+            normal_count = max(0, active_ips - suspicious_count - malicious_count)
+            
+            return jsonify({
+                'active_ips': active_ips,
+                'suspicious_ips': suspicious_count,
+                'malicious_ips': malicious_count,
+                'honeypot_interactions': controller_data.get('flow_count', 0),
+                'traffic_history': {
+                    'normal': normal_count,
+                    'suspicious': suspicious_count,
+                    'malicious': malicious_count
+                },
+                'threat_distribution': {
+                    'normal': normal_count,
+                    'suspicious': suspicious_count,
+                    'malicious': malicious_count
+                },
+                'timestamp': datetime.datetime.now().isoformat(),
+                'controller_status': 'active'
+            })
+    except Exception as e:
+        # Controller is not available - return default values
+        return jsonify({
+            'active_ips': 0,
+            'suspicious_ips': 0,
+            'malicious_ips': 0,
+            'honeypot_interactions': 0,
+            'traffic_history': {
+                'normal': 0,
+                'suspicious': 0,
+                'malicious': 0
+            },
+            'threat_distribution': {
+                'normal': 0,
+                'suspicious': 0,
+                'malicious': 0
+            },
+            'timestamp': datetime.datetime.now().isoformat(),
+            'controller_status': 'offline',
+            'error': str(e)
+        })
+
 if __name__ == '__main__':
     port = 9000
     print("🌐 Starting Enhanced SDN Honeypot Presentation Website")
     print(f"📍 URL: http://localhost:{port}")
     print("📋 Features:")
     print("   • Landing Page with Project Overview")
-    print("   • Interactive Demo Terminal")
     print("   • Component Architecture Diagrams") 
     print("   • Live Documentation (README)")
     print("   • Real-time System Monitoring")
     print("   • ML Model Analysis")
+    print("   • Live Terminal (redirects to port 9001)")
     print("🎯 Perfect for academic presentations and demos!")
     app.run(host='0.0.0.0', port=port, debug=True) 

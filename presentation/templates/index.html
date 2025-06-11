@@ -2,6 +2,10 @@
 
 {% block title %}SDN Honeypot Security System - Home{% endblock %}
 
+{% block extra_head %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+{% endblock %}
+
 {% block content %}
 <!-- Hero Section -->
 <section class="hero-section position-relative overflow-hidden">
@@ -31,13 +35,13 @@
                     and <strong>Multi-layered Honeypot Deception</strong>
                 </p>
                 <div class="d-flex justify-content-center gap-3 flex-wrap">
-                    <a href="{{ url_for('demo') }}" class="btn btn-primary btn-lg">
-                        <i class="fas fa-play-circle"></i> Live Demo
+                    <a href="{{ url_for('live_demo') }}" target="_blank" class="btn btn-danger btn-lg">
+                        <i class="fas fa-terminal"></i> Live Terminal Demo
                     </a>
                     <a href="{{ url_for('documentation') }}" class="btn btn-outline-light btn-lg">
                         <i class="fas fa-book"></i> Documentation
                     </a>
-                    <a href="{{ url_for('monitoring') }}" class="btn btn-outline-light btn-lg">
+                    <a href="#monitoring" class="btn btn-outline-light btn-lg">
                         <i class="fas fa-chart-line"></i> System Status
                     </a>
                 </div>
@@ -210,8 +214,6 @@
     </div>
 </section>
 
-
-
 <!-- Technology Stack -->
 <section class="py-5" style="background: rgba(0,0,0,0.2);">
     <div class="container">
@@ -286,25 +288,338 @@
     </div>
 </section>
 
+<!-- System Components -->
+<section class="py-5" id="components">
+    <div class="container">
+        <div class="row text-center mb-5">
+            <div class="col-12">
+                <h2 class="display-5 fw-bold mb-3">
+                    <i class="fas fa-cubes text-primary"></i>
+                    System Components
+                </h2>
+                <p class="lead">Core components that make up the SDN Honeypot Security System</p>
+            </div>
+        </div>
+        
+        <div class="row g-4">
+            <!-- SDN Controller -->
+            <div class="col-lg-6">
+                <div class="card h-100">
+                    <div class="card-header">
+                        <h4 class="mb-0">
+                            <i class="fas fa-microchip text-primary"></i>
+                            SDN Controller
+                        </h4>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Normal Servers -->
+            <div class="col-lg-6">
+                <div class="card h-100">
+                    <div class="card-header">
+                        <h4 class="mb-0">
+                            <i class="fas fa-server text-info"></i>
+                            Normal Servers (h1, h2, h3)
+                        </h4>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Triage Honeypot -->
+            <div class="col-lg-6">
+                <div class="card h-100">
+                    <div class="card-header">
+                        <h4 class="mb-0">
+                            <i class="fas fa-filter text-warning"></i>
+                            Triage Honeypot (h4)
+                        </h4>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Deep Honeypot -->
+            <div class="col-lg-6">
+                <div class="card h-100">
+                    <div class="card-header">
+                        <h4 class="mb-0">
+                            <i class="fas fa-bug text-danger"></i>
+                            Deep Honeypot (h5)
+                        </h4>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- ML Model -->
+            <div class="col-lg-6">
+                <div class="card h-100">
+                    <div class="card-header">
+                        <h4 class="mb-0">
+                            <i class="fas fa-brain text-info"></i>
+                            Machine Learning Model
+                        </h4>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Network Topology -->
+            <div class="col-lg-6">
+                <div class="card h-100">
+                    <div class="card-header">
+                        <h4 class="mb-0">
+                            <i class="fas fa-network-wired text-primary"></i>
+                            Network Topology (Mininet)
+                        </h4>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- System Architecture -->
+<section class="py-5" style="background: rgba(0,0,0,0.2);" id="architecture">
+    <div class="container">
+        <div class="row text-center mb-5">
+            <div class="col-12">
+                <h2 class="display-5 fw-bold mb-3">
+                    <i class="fas fa-sitemap text-primary"></i>
+                    System Architecture
+                </h2>
+                <p class="lead">Complete system design and traffic flow overview</p>
+            </div>
+        </div>
+        
+        <!-- Network Topology Diagram -->
+        <div class="row mb-5">
+            <div class="col-12 text-center">
+                <div class="topology-diagram-container p-4" style="background: #2a3642; border-radius: 10px;">
+                    <img src="{{ url_for('static', filename='images/networktopology.jpg') }}" 
+                         alt="SDN Honeypot Network Topology" 
+                         class="img-fluid" 
+                         style="max-width: 100%; height: auto; border-radius: 8px;">
+                    <p class="mt-3" style="color: white;">Network topology showing the complete SDN architecture</p>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Traffic Flow Process -->
+        <div class="row g-4">
+            <div class="col-md-4">
+                <div class="card h-100">
+                    <div class="card-header text-center">
+                        <span class="badge bg-primary fs-5 me-2">1</span>
+                        <h5 class="d-inline">Initial Request</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="text-center mb-3">
+                            <i class="fas fa-paper-plane fa-3x text-primary"></i>
+                        </div>
+                        <ul>
+                            <li>External client sends HTTP request</li>
+                            <li>Request intercepted by SDN controller</li>
+                            <li>Source IP analysis begins</li>
+                            <li>Request patterns examined</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-md-4">
+                <div class="card h-100">
+                    <div class="card-header text-center">
+                        <span class="badge bg-success fs-5 me-2">2</span>
+                        <h5 class="d-inline">Classification</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="text-center mb-3">
+                            <i class="fas fa-code-branch fa-3x text-success"></i>
+                        </div>
+                        <ul>
+                            <li><strong>Normal:</strong> Route to legitimate servers</li>
+                            <li><strong>Suspicious:</strong> Redirect to triage honeypot</li>
+                            <li><strong>Malicious:</strong> Send to deep honeypot</li>
+                            <li>Dynamic flow rules installed</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-md-4">
+                <div class="card h-100">
+                    <div class="card-header text-center">
+                        <span class="badge bg-warning fs-5 me-2">3</span>
+                        <h5 class="d-inline">ML Analysis</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="text-center mb-3">
+                            <i class="fas fa-brain fa-3x text-warning"></i>
+                        </div>
+                        <ul>
+                            <li>Triage honeypot captures data</li>
+                            <li>ML model analyzes behavior</li>
+                            <li>Risk score calculated (0-1)</li>
+                            <li>Binary decision sent to controller</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Real-time Monitoring -->
+<section class="py-5" id="monitoring">
+    <div class="container">
+        <div class="row text-center mb-5">
+            <div class="col-12">
+                <h2 class="display-5 fw-bold mb-3">
+                    <i class="fas fa-chart-line text-primary"></i>
+                    Real-time System Monitoring
+                </h2>
+                <p class="lead">Live monitoring dashboard with real-time statistics and threat detection</p>
+            </div>
+        </div>
+        
+        <!-- Key Metrics -->
+        <div class="stats-grid mb-5">
+            <div class="stat-card">
+                <div class="stat-number" id="active-ips-count">-</div>
+                <h6>Active IPs</h6>
+                <small>Currently monitored network hosts</small>
+            </div>
+            
+            <div class="stat-card">
+                <div class="stat-number" id="suspicious-count">-</div>
+                <h6>Suspicious IPs</h6>
+                <small>Flagged for potential threats</small>
+            </div>
+            
+            <div class="stat-card">
+                <div class="stat-number" id="malicious-count">-</div>
+                <h6>Malicious IPs</h6>
+                <small>Confirmed threats by ML model</small>
+            </div>
+            
+            <div class="stat-card">
+                <div class="stat-number" id="honeypot-interactions">-</div>
+                <h6>Honeypot Interactions</h6>
+                <small>Total logged attempts</small>
+            </div>
+        </div>
+        
+                 <!-- Real-time Charts -->
+         <div class="row g-4">
+             <div class="col-lg-9">
+                 <div class="card">
+                     <div class="card-header">
+                         <h5 class="mb-0">
+                             <i class="fas fa-chart-line text-primary"></i>
+                             Real-time Traffic Monitoring
+                         </h5>
+                     </div>
+                     <div class="card-body">
+                         <canvas id="trafficChart" height="120"></canvas>
+                     </div>
+                 </div>
+             </div>
+             
+             <div class="col-lg-3">
+                 <div class="card">
+                     <div class="card-header">
+                         <h5 class="mb-0">
+                             <i class="fas fa-pie-chart text-success"></i>
+                             Threat Distribution
+                         </h5>
+                     </div>
+                     <div class="card-body">
+                         <canvas id="threatChart"></canvas>
+                     </div>
+                 </div>
+             </div>
+         </div>
+        
+        <!-- Component Status -->
+        <div class="row g-4 mt-4">
+            <div class="col-12 text-center mb-3">
+                <h4>Component Health Status</h4>
+            </div>
+            
+            <div class="col-md-3">
+                <div class="card text-center">
+                    <div class="card-body">
+                        <i class="fas fa-microchip fa-3x mb-3" id="controller-icon"></i>
+                        <h6>SDN Controller</h6>
+                        <div class="d-flex align-items-center justify-content-center">
+                            <span class="status-indicator" id="controller-status-indicator"></span>
+                            <span id="controller-status-text">Checking...</span>
+                        </div>
+                        <small class="text-muted">Port 8080</small>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-md-3">
+                <div class="card text-center">
+                    <div class="card-body">
+                        <i class="fas fa-chart-bar fa-3x mb-3" id="dashboard-icon"></i>
+                        <h6>Monitoring Interface</h6>
+                        <div class="d-flex align-items-center justify-content-center">
+                            <span class="status-indicator" id="dashboard-status-indicator"></span>
+                            <span id="dashboard-status-text">Checking...</span>
+                        </div>
+                        <small class="text-muted">Dashboard Status</small>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-md-3">
+                <div class="card text-center">
+                    <div class="card-body">
+                        <i class="fas fa-brain fa-3x mb-3" id="ml-icon"></i>
+                        <h6>ML Model</h6>
+                        <div class="d-flex align-items-center justify-content-center">
+                            <span class="status-indicator" id="ml-status-indicator"></span>
+                            <span id="ml-status-text">Checking...</span>
+                        </div>
+                        <small class="text-muted">Classification Engine</small>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-md-3">
+                <div class="card text-center">
+                    <div class="card-body">
+                        <i class="fas fa-network-wired fa-3x mb-3"></i>
+                        <h6>Network Topology</h6>
+                        <div class="d-flex align-items-center justify-content-center">
+                            <span class="status-indicator status-active"></span>
+                            <span>Configured</span>
+                        </div>
+                        <small class="text-muted">6 hosts, 7 switches</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
 <!-- Call to Action -->
-<section class="py-5">
+<section class="py-5" style="background: rgba(0,0,0,0.2);">
     <div class="container">
         <div class="row justify-content-center text-center">
             <div class="col-lg-8">
                 <h2 class="display-5 fw-bold mb-4">Ready to Explore?</h2>
                 <p class="lead mb-4">
-                    Dive into the interactive demo, explore the system architecture, 
-                    or check out the comprehensive documentation.
+                    Dive into the interactive demo or check out the comprehensive documentation 
+                    to learn more about the SDN Honeypot Security System.
                 </p>
                 <div class="d-flex justify-content-center gap-3 flex-wrap">
-                    <a href="{{ url_for('demo') }}" class="btn btn-primary btn-lg">
-                        <i class="fas fa-play-circle"></i> Start Live Demo
+                    <a href="{{ url_for('live_demo') }}" target="_blank" class="btn btn-primary btn-lg">
+                        <i class="fas fa-terminal"></i> Start Live Terminal Demo
                     </a>
-                    <a href="{{ url_for('components') }}" class="btn btn-outline-light btn-lg">
-                        <i class="fas fa-cubes"></i> Explore Components
-                    </a>
-                    <a href="{{ url_for('architecture') }}" class="btn btn-outline-light btn-lg">
-                        <i class="fas fa-sitemap"></i> View Architecture
+                    <a href="{{ url_for('documentation') }}" class="btn btn-outline-light btn-lg">
+                        <i class="fas fa-book"></i> View Documentation
                     </a>
                 </div>
             </div>
@@ -316,19 +631,25 @@
 {% block extra_js %}
 <script>
 document.addEventListener('DOMContentLoaded', function() {
+    // Initialize monitoring charts and data
+    initializeMonitoring();
+    
     // Function to update system status
     function updateSystemStatus() {
         fetch('/api/system-status')
             .then(response => response.json())
             .then(data => {
-                // Update status indicators
+                // Update status indicators with safe property access
                 const indicator = document.getElementById('system-status-indicator');
                 const statusText = document.getElementById('system-status-text');
                 const controllerStatus = document.getElementById('controller-status');
                 const dashboardStatus = document.getElementById('dashboard-status');
                 const mlStatus = document.getElementById('ml-status');
                 
-                if (data.controller.status === 'ACTIVE') {
+                // Safe access to controller status
+                const controllerActive = data?.controller?.status === 'ACTIVE';
+                
+                if (controllerActive) {
                     indicator.className = 'status-indicator status-active';
                     statusText.textContent = 'System Online';
                     controllerStatus.innerHTML = '<span class="text-success">Active</span>';
@@ -338,21 +659,249 @@ document.addEventListener('DOMContentLoaded', function() {
                     controllerStatus.innerHTML = '<span class="text-danger">Inactive</span>';
                 }
                 
-                dashboardStatus.innerHTML = data.dashboard.status === 'ACTIVE' ? 
+                // Safe access to dashboard status
+                const dashboardActive = data?.dashboard?.status === 'ACTIVE';
+                dashboardStatus.innerHTML = dashboardActive ? 
                     '<span class="text-success">Active</span>' : 
                     '<span class="text-danger">Inactive</span>';
                 
-                mlStatus.innerHTML = data.ml_model.status === 'OPERATIONAL' ? 
+                // Safe access to ML model status
+                const mlOperational = data?.ml_model?.status === 'OPERATIONAL';
+                mlStatus.innerHTML = mlOperational ? 
                     '<span class="text-success">Operational</span>' : 
                     '<span class="text-danger">Inactive</span>';
                 
-
+                // Update component status cards
+                updateComponentStatus(data);
             })
             .catch(error => {
                 console.error('Error fetching system status:', error);
-                document.getElementById('system-status-indicator').className = 'status-indicator status-inactive';
-                document.getElementById('system-status-text').textContent = 'Status Unknown';
+                // Safely update elements that definitely exist
+                const indicator = document.getElementById('system-status-indicator');
+                const statusText = document.getElementById('system-status-text');
+                if (indicator) indicator.className = 'status-indicator status-inactive';
+                if (statusText) statusText.textContent = 'Status Unknown';
             });
+    }
+    
+    function updateComponentStatus(data) {
+        // Safe property access and element checks
+        
+        // Update controller status
+        const controllerIndicator = document.getElementById('controller-status-indicator');
+        const controllerText = document.getElementById('controller-status-text');
+        
+        if (controllerIndicator && controllerText) {
+            const controllerActive = data?.controller?.status === 'ACTIVE';
+            if (controllerActive) {
+                controllerIndicator.className = 'status-indicator status-active';
+                controllerText.textContent = 'Online';
+            } else {
+                controllerIndicator.className = 'status-indicator status-inactive';
+                controllerText.textContent = 'Offline';
+            }
+        }
+        
+        // Update dashboard status
+        const dashboardIndicator = document.getElementById('dashboard-status-indicator');
+        const dashboardText = document.getElementById('dashboard-status-text');
+        
+        if (dashboardIndicator && dashboardText) {
+            const dashboardActive = data?.dashboard?.status === 'ACTIVE';
+            if (dashboardActive) {
+                dashboardIndicator.className = 'status-indicator status-active';
+                dashboardText.textContent = 'Online';
+            } else {
+                dashboardIndicator.className = 'status-indicator status-inactive';
+                dashboardText.textContent = 'Offline';
+            }
+        }
+        
+        // Update ML model status
+        const mlIndicator = document.getElementById('ml-status-indicator');
+        const mlText = document.getElementById('ml-status-text');
+        
+        if (mlIndicator && mlText) {
+            const mlOperational = data?.ml_model?.status === 'OPERATIONAL';
+            if (mlOperational) {
+                mlIndicator.className = 'status-indicator status-active';
+                mlText.textContent = 'Operational';
+            } else {
+                mlIndicator.className = 'status-indicator status-inactive';
+                mlText.textContent = 'Inactive';
+            }
+        }
+    }
+    
+    function initializeMonitoring() {
+        // Initialize charts
+        initializeTrafficChart();
+        initializeThreatChart();
+        
+        // Update monitoring data
+        updateMonitoringData();
+        
+        // Set up auto-refresh for monitoring data
+        setInterval(updateMonitoringData, 10000);
+    }
+    
+    function initializeTrafficChart() {
+        const ctx = document.getElementById('trafficChart');
+        if (!ctx) return;
+        
+        window.trafficChart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: [],
+                datasets: [{
+                    label: 'Normal Traffic',
+                    data: [],
+                    borderColor: 'rgb(46, 204, 113)',
+                    backgroundColor: 'rgba(46, 204, 113, 0.2)',
+                    tension: 0.4,
+                    fill: true
+                }, {
+                    label: 'Suspicious Traffic',
+                    data: [],
+                    borderColor: 'rgb(241, 196, 15)',
+                    backgroundColor: 'rgba(241, 196, 15, 0.2)',
+                    tension: 0.4,
+                    fill: true
+                }, {
+                    label: 'Malicious Traffic',
+                    data: [],
+                    borderColor: 'rgb(231, 76, 60)',
+                    backgroundColor: 'rgba(231, 76, 60, 0.2)',
+                    tension: 0.4,
+                    fill: true
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                interaction: {
+                    intersect: false,
+                },
+                plugins: {
+                    legend: {
+                        labels: { color: 'white' }
+                    }
+                },
+                scales: {
+                    x: {
+                        ticks: { 
+                            color: 'white',
+                            maxTicksLimit: 10
+                        },
+                        grid: { color: 'rgba(255, 255, 255, 0.1)' }
+                    },
+                    y: {
+                        min: 0,
+                        max: 10,
+                        ticks: { 
+                            color: 'white',
+                            stepSize: 1,
+                            callback: function(value) {
+                                return Number.isInteger(value) ? value : '';
+                            }
+                        },
+                        grid: { color: 'rgba(255, 255, 255, 0.1)' }
+                    }
+                }
+            }
+        });
+    }
+    
+    function initializeThreatChart() {
+        const ctx = document.getElementById('threatChart');
+        if (!ctx) return;
+        
+        window.threatChart = new Chart(ctx, {
+            type: 'doughnut',
+            data: {
+                labels: ['Normal', 'Suspicious', 'Malicious'],
+                datasets: [{
+                    data: [0, 0, 0],
+                    backgroundColor: ['#2ecc71', '#f1c40f', '#e74c3c'],
+                    borderWidth: 2,
+                    borderColor: '#2c3e50'
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: {
+                        labels: { color: 'white' }
+                    }
+                }
+            }
+        });
+    }
+    
+    function updateMonitoringData() {
+        fetch('/api/monitoring-data')
+            .then(response => response.json())
+            .then(data => {
+                // Update statistics with safe element access
+                const activeIpsEl = document.getElementById('active-ips-count');
+                const suspiciousEl = document.getElementById('suspicious-count');
+                const maliciousEl = document.getElementById('malicious-count');
+                const interactionsEl = document.getElementById('honeypot-interactions');
+                
+                if (activeIpsEl) activeIpsEl.textContent = data?.active_ips || 0;
+                if (suspiciousEl) suspiciousEl.textContent = data?.suspicious_ips || 0;
+                if (maliciousEl) maliciousEl.textContent = data?.malicious_ips || 0;
+                if (interactionsEl) interactionsEl.textContent = data?.honeypot_interactions || 0;
+                
+                // Update charts if they exist
+                if (window.trafficChart && data?.traffic_history) {
+                    updateTrafficChart(data.traffic_history);
+                }
+                
+                if (window.threatChart && data?.threat_distribution) {
+                    updateThreatChart(data.threat_distribution);
+                }
+            })
+            .catch(error => {
+                console.error('Error fetching monitoring data:', error);
+            });
+    }
+    
+    function updateTrafficChart(trafficData) {
+        const chart = window.trafficChart;
+        
+        // Create time label (HH:MM:SS format)
+        const now = new Date();
+        const timeLabel = now.toLocaleTimeString('en-US', { 
+            hour12: false,
+            hour: '2-digit',
+            minute: '2-digit',
+            second: '2-digit'
+        });
+        
+        // Add new data point
+        chart.data.labels.push(timeLabel);
+        chart.data.datasets[0].data.push(Math.min(trafficData.normal || 0, 10)); // Cap at 10
+        chart.data.datasets[1].data.push(Math.min(trafficData.suspicious || 0, 10)); // Cap at 10
+        chart.data.datasets[2].data.push(Math.min(trafficData.malicious || 0, 10)); // Cap at 10
+        
+        // Keep only last 15 data points (150 seconds = 2.5 minutes of history)
+        if (chart.data.labels.length > 15) {
+            chart.data.labels.shift();
+            chart.data.datasets.forEach(dataset => dataset.data.shift());
+        }
+        
+        chart.update('none');
+    }
+    
+    function updateThreatChart(threatData) {
+        const chart = window.threatChart;
+        chart.data.datasets[0].data = [
+            threatData.normal || 0,
+            threatData.suspicious || 0,
+            threatData.malicious || 0
+        ];
+        chart.update();
     }
     
     // Initial status update

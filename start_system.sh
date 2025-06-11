@@ -19,20 +19,20 @@ NC='\033[0m' # No Color
 PROJECT_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 CONTROLLER_PORT=6653
 API_PORT=8080
-DASHBOARD_PORT=8090
 PRESENTATION_PORT=9000
+LIVE_DEMO_PORT=9001
 
 # Log files
 LOG_DIR="$PROJECT_ROOT/logs"
 CONTROLLER_LOG="$LOG_DIR/controller.log"
-DASHBOARD_LOG="$LOG_DIR/dashboard.log"
 PRESENTATION_LOG="$LOG_DIR/presentation.log"
+LIVE_DEMO_LOG="$LOG_DIR/live_demo.log"
 
 # PID files for process management
 PID_DIR="$PROJECT_ROOT/pids"
 CONTROLLER_PID="$PID_DIR/controller.pid"
-DASHBOARD_PID="$PID_DIR/dashboard.pid"
 PRESENTATION_PID="$PID_DIR/presentation.pid"
+LIVE_DEMO_PID="$PID_DIR/live_demo.pid"
 
 # Create necessary directories
 mkdir -p "$LOG_DIR" "$PID_DIR"
@@ -101,14 +101,14 @@ cleanup() {
         rm -f "$CONTROLLER_PID"
     fi
     
-    if [ -f "$DASHBOARD_PID" ]; then
-        kill $(cat "$DASHBOARD_PID") 2>/dev/null || true
-        rm -f "$DASHBOARD_PID"
-    fi
-    
     if [ -f "$PRESENTATION_PID" ]; then
         kill $(cat "$PRESENTATION_PID") 2>/dev/null || true
         rm -f "$PRESENTATION_PID"
+    fi
+    
+    if [ -f "$LIVE_DEMO_PID" ]; then
+        kill $(cat "$LIVE_DEMO_PID") 2>/dev/null || true
+        rm -f "$LIVE_DEMO_PID"
     fi
     
     # Clean mininet
@@ -151,32 +151,28 @@ main() {
         wait_for_service $API_PORT "Controller REST API"
     fi
     
-    # Step 3: Create Dashboard Service
-    print_header "\n📊 Step 3: Creating Dashboard Service"
-    create_dashboard_service
-    
     # Wait a moment for controller to fully initialize
     print_status "Allowing controller to initialize..."
     sleep 3
     
-    # Step 4: Start Dashboard
-    print_header "\n📊 Step 4: Starting Monitoring Dashboard"
-    if check_port $DASHBOARD_PORT; then
-        print_warning "Dashboard already running on port $DASHBOARD_PORT"
-    else
-        start_dashboard
-    fi
-    
-    # Step 5: Start Presentation Website
-    print_header "\n🌐 Step 5: Starting Presentation Website"
+    # Step 3: Start Presentation Website
+    print_header "\n🌐 Step 3: Starting Presentation Website"
     if check_port $PRESENTATION_PORT; then
         print_warning "Presentation already running on port $PRESENTATION_PORT"
     else
         start_presentation
     fi
     
-    # Step 6: Start Network Topology and Services
-    print_header "\n🕸️  Step 6: Starting Network Topology"
+    # Step 4: Start Live Demo Terminal Server
+    print_header "\n🔴 Step 4: Starting Live Demo Terminal Server"
+    if check_port $LIVE_DEMO_PORT; then
+        print_warning "Live Demo already running on port $LIVE_DEMO_PORT"
+    else
+        start_live_demo
+    fi
+    
+    # Step 5: Start Network Topology and Services
+    print_header "\n🕸️  Step 5: Starting Network Topology"
     print_status "This will start Mininet topology with all hosts and services..."
     print_warning "This step requires interactive input - the Mininet CLI will open"
     print_status "You can run 'pingall' to test connectivity and demo commands"
@@ -192,21 +188,6 @@ main() {
     print_header "\n✅ Topology session ended"
 }
 
-# Function to create dashboard service
-create_dashboard_service() {
-    print_success "Using existing advanced dashboard service"
-}
-
-# Function to start dashboard
-start_dashboard() {
-    print_status "Starting monitoring dashboard..."
-    cd "$PROJECT_ROOT/dashboard"
-    nohup python3 app.py > "$DASHBOARD_LOG" 2>&1 &
-    echo $! > "$DASHBOARD_PID"
-    
-    wait_for_service $DASHBOARD_PORT "Dashboard"
-}
-
 # Function to start presentation
 start_presentation() {
     print_status "Starting presentation website..."
@@ -215,6 +196,16 @@ start_presentation() {
     echo $! > "$PRESENTATION_PID"
     
     wait_for_service $PRESENTATION_PORT "Presentation"
+}
+
+# Function to start live demo server
+start_live_demo() {
+    print_status "Starting live demo terminal server..."
+    cd "$PROJECT_ROOT/presentation"
+    nohup python3 live_demo_server.py > "$LIVE_DEMO_LOG" 2>&1 &
+    echo $! > "$LIVE_DEMO_PID"
+    
+    wait_for_service $LIVE_DEMO_PORT "Live Demo Terminal"
 }
 
 # Function to show system status
@@ -232,13 +223,6 @@ show_system_status() {
         echo -e "${RED}❌ SDN Controller${NC}      : Not Running"
     fi
     
-    # Dashboard status
-    if check_port $DASHBOARD_PORT; then
-        echo -e "${GREEN}✅ Dashboard${NC}           : Running (Port $DASHBOARD_PORT)"
-    else
-        echo -e "${RED}❌ Dashboard${NC}           : Not Running"
-    fi
-    
     # Presentation status
     if check_port $PRESENTATION_PORT; then
         echo -e "${GREEN}✅ Presentation${NC}        : Running (Port $PRESENTATION_PORT)"
@@ -246,11 +230,18 @@ show_system_status() {
         echo -e "${RED}❌ Presentation${NC}        : Not Running"
     fi
     
+    # Live Demo status
+    if check_port $LIVE_DEMO_PORT; then
+        echo -e "${GREEN}✅ Live Demo Terminal${NC}  : Running (Port $LIVE_DEMO_PORT)"
+    else
+        echo -e "${RED}❌ Live Demo Terminal${NC}  : Not Running"
+    fi
+    
     echo "=================================="
     echo -e "${CYAN}🌐 Access URLs:${NC}"
-    echo "   Dashboard    : http://localhost:$DASHBOARD_PORT"
-    echo "   Presentation : http://localhost:$PRESENTATION_PORT"
-    echo "   Controller API: http://localhost:$API_PORT/api/status"
+    echo "   Presentation   : http://localhost:$PRESENTATION_PORT"
+    echo "   Live Demo      : http://localhost:$LIVE_DEMO_PORT"
+    echo "   Controller API : http://localhost:$API_PORT/api/stats"
     echo "=================================="
     
     print_status "Ready to start network topology..."
@@ -300,9 +291,8 @@ print_header "\n🚀 Ready to Start SDN Honeypot System"
 echo "This script will:"
 echo "  1. Clean previous Mininet instances"
 echo "  2. Start SDN Controller (Ryu)"
-echo "  3. Start Monitoring Dashboard"
-echo "  4. Start Presentation Website"
-echo "  5. Start Network Topology with all services"
+echo "  3. Start Presentation Website"
+echo "  4. Start Network Topology with all services"
 echo ""
 read -p "Continue? (y/N): " -n 1 -r
 echo
@@ -316,4 +306,4 @@ main
 
 print_header "\n🎉 SDN Honeypot System Startup Complete!"
 print_success "All components have been started successfully"
-print_status "Check the dashboard and presentation URLs shown above" 
+print_status "Check the presentation URL shown above" 

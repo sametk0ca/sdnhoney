@@ -96,7 +96,6 @@ This is a **state-of-the-art Software-Defined Network (SDN) honeypot system** wi
 | Service             | URL                   | Port | Description                    |
 | ------------------- | --------------------- | ---- | ------------------------------ |
 | **Presentation**    | http://localhost:9000 | 9000 | Academic showcase website      |
-| **Dashboard**       | http://localhost:8090 | 8090 | Real-time monitoring interface |
 | **Controller API**  | http://localhost:8080 | 8080 | SDN controller REST API        |
 | **Normal Server 1** | http://localhost:8001 | 8001 | h1 - Regular web service       |
 | **Normal Server 2** | http://localhost:8002 | 8002 | h2 - Regular web service       |

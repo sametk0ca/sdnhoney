@@ -2,6 +2,10 @@
 
 {% block title %}Real-time Monitoring - SDN Honeypot Security System{% endblock %}
 
+{% block extra_head %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+{% endblock %}
+
 {% block content %}
 <!-- Monitoring Header -->
 <section class="py-5" style="background: rgba(0,0,0,0.3);">
@@ -38,6 +42,9 @@
                 <button class="btn btn-sm btn-outline-light" onclick="toggleAutoRefresh()">
                     <i class="fas fa-play" id="auto-refresh-icon"></i> <span id="auto-refresh-text">Start Auto</span>
                 </button>
+                <button class="btn btn-sm btn-warning" onclick="resetSystem()" id="reset-btn">
+                    <i class="fas fa-redo"></i> Reset for Demo
+                </button>
             </div>
         </div>
     </div>
@@ -69,6 +76,48 @@
                 <div class="stat-number" id="honeypot-interactions">-</div>
                 <h6>Honeypot Interactions</h6>
                 <small>Total logged attempts</small>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Real-time Charts -->
+<section class="py-5" style="background: rgba(0,0,0,0.1);">
+    <div class="container">
+        <div class="row">
+            <div class="col-12 text-center mb-4">
+                <h2>Traffic Analytics</h2>
+                <p class="lead">Real-time visualization of network activity and threat detection</p>
+            </div>
+        </div>
+        
+        <div class="row g-4">
+            <div class="col-lg-8">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="mb-0">
+                            <i class="fas fa-chart-line text-primary"></i>
+                            Real-time Traffic Monitoring
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <canvas id="trafficChart" height="100"></canvas>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-lg-4">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="mb-0">
+                            <i class="fas fa-pie-chart text-success"></i>
+                            Threat Distribution
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <canvas id="threatChart"></canvas>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
@@ -148,12 +197,12 @@
                 <div class="card text-center">
                     <div class="card-body">
                         <i class="fas fa-chart-bar fa-3x mb-3" id="dashboard-icon"></i>
-                        <h6>Dashboard</h6>
+                        <h6>Monitoring Interface</h6>
                         <div class="d-flex align-items-center justify-content-center">
                             <span class="status-indicator" id="dashboard-status-indicator"></span>
                             <span id="dashboard-status-text">Integrated</span>
                         </div>
-                        <small class="text-muted">Unified Interface</small>
+                        <small class="text-muted">Built-in Interface</small>
                     </div>
                 </div>
             </div>
@@ -244,12 +293,198 @@
 <script>
 let autoRefreshInterval = null;
 let isAutoRefreshEnabled = false;
+let trafficChart = null;
+let threatChart = null;
+let trafficData = {
+    timestamps: [],
+    activeIPs: [],
+    suspiciousIPs: [],
+    maliciousIPs: []
+};
 
 document.addEventListener('DOMContentLoaded', function() {
-    refreshData();
+    console.log('DOM loaded, initializing monitoring...');
+    
+    // Check if Chart.js is loaded
+    if (typeof Chart === 'undefined') {
+        console.error('Chart.js is not loaded! Trying to load it...');
+        
+        // Try to load Chart.js dynamically
+        const script = document.createElement('script');
+        script.src = 'https://cdn.jsdelivr.net/npm/chart.js';
+        script.onload = function() {
+            console.log('Chart.js loaded successfully');
+            initializeCharts();
+            setTimeout(() => {
+                console.log('Starting initial data refresh...');
+                refreshData();
+            }, 500);
+        };
+        script.onerror = function() {
+            console.error('Failed to load Chart.js');
+        };
+        document.head.appendChild(script);
+    } else {
+        console.log('Chart.js is available');
+        initializeCharts();
+        
+        // Add a small delay to ensure everything is ready
+        setTimeout(() => {
+            console.log('Starting initial data refresh...');
+            refreshData();
+        }, 500);
+    }
 });
 
+function initializeCharts() {
+    // Check if Chart.js is available
+    if (typeof Chart === 'undefined') {
+        console.error('Chart.js is not available, cannot initialize charts');
+        return;
+    }
+    
+    console.log('Initializing charts...');
+    
+    // Traffic monitoring chart
+    const trafficCtx = document.getElementById('trafficChart').getContext('2d');
+    trafficChart = new Chart(trafficCtx, {
+        type: 'line',
+        data: {
+            labels: [],
+            datasets: [
+                {
+                    label: 'Active IPs',
+                    data: [],
+                    borderColor: '#3498db',
+                    backgroundColor: 'rgba(52, 152, 219, 0.1)',
+                    tension: 0.4,
+                    fill: true
+                },
+                {
+                    label: 'Suspicious IPs',
+                    data: [],
+                    borderColor: '#f39c12',
+                    backgroundColor: 'rgba(243, 156, 18, 0.1)',
+                    tension: 0.4,
+                    fill: true
+                },
+                {
+                    label: 'Malicious IPs',
+                    data: [],
+                    borderColor: '#e74c3c',
+                    backgroundColor: 'rgba(231, 76, 60, 0.1)',
+                    tension: 0.4,
+                    fill: true
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    labels: {
+                        color: 'white'
+                    }
+                }
+            },
+            scales: {
+                x: {
+                    ticks: {
+                        color: 'white'
+                    },
+                    grid: {
+                        color: 'rgba(255, 255, 255, 0.1)'
+                    }
+                },
+                y: {
+                    ticks: {
+                        color: 'white'
+                    },
+                    grid: {
+                        color: 'rgba(255, 255, 255, 0.1)'
+                    },
+                    beginAtZero: true
+                }
+            }
+        }
+    });
+
+    // Threat distribution chart
+    const threatCtx = document.getElementById('threatChart').getContext('2d');
+    threatChart = new Chart(threatCtx, {
+        type: 'doughnut',
+        data: {
+            labels: ['Normal', 'Suspicious', 'Malicious'],
+            datasets: [{
+                data: [0, 0, 0],
+                backgroundColor: [
+                    '#27ae60',
+                    '#f39c12',
+                    '#e74c3c'
+                ],
+                borderColor: [
+                    '#2ecc71',
+                    '#f1c40f',
+                    '#c0392b'
+                ],
+                borderWidth: 2
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: true,
+            plugins: {
+                legend: {
+                    labels: {
+                        color: 'white'
+                    }
+                }
+            }
+        }
+    });
+}
+
+function updateCharts(data) {
+    const currentTime = new Date().toLocaleTimeString();
+    
+    // Update traffic data
+    trafficData.timestamps.push(currentTime);
+    trafficData.activeIPs.push(data.controller.stats?.active_ips || 0);
+    trafficData.suspiciousIPs.push(data.controller.stats?.suspicious_ips?.length || 0);
+    trafficData.maliciousIPs.push(data.controller.stats?.malicious_ips?.length || 0);
+    
+    // Keep only last 20 data points
+    if (trafficData.timestamps.length > 20) {
+        trafficData.timestamps.shift();
+        trafficData.activeIPs.shift();
+        trafficData.suspiciousIPs.shift();
+        trafficData.maliciousIPs.shift();
+    }
+    
+    // Update traffic chart
+    trafficChart.data.labels = trafficData.timestamps;
+    trafficChart.data.datasets[0].data = trafficData.activeIPs;
+    trafficChart.data.datasets[1].data = trafficData.suspiciousIPs;
+    trafficChart.data.datasets[2].data = trafficData.maliciousIPs;
+    trafficChart.update('none');
+    
+    // Update threat distribution chart
+    const activeCount = data.controller.stats?.active_ips || 0;
+    const suspiciousCount = data.controller.stats?.suspicious_ips?.length || 0;
+    const maliciousCount = data.controller.stats?.malicious_ips?.length || 0;
+    const normalCount = Math.max(0, activeCount - suspiciousCount - maliciousCount);
+    
+    threatChart.data.datasets[0].data = [normalCount, suspiciousCount, maliciousCount];
+    threatChart.update('none');
+}
+
 function refreshData() {
+    console.log('Refreshing data...');
+    
+    // Show loading state
+    document.getElementById('status-text').textContent = 'Loading...';
+    
     updateSystemStatus();
     updateLatestActivity();
     
@@ -258,9 +493,18 @@ function refreshData() {
 }
 
 function updateSystemStatus() {
+    console.log('Fetching system status...');
+    
     fetch('/api/system-status')
-        .then(response => response.json())
+        .then(response => {
+            console.log('Response received:', response.status);
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            return response.json();
+        })
         .then(data => {
+            console.log('Data received:', data);
             // Update overall status
             const overallStatus = document.getElementById('overall-status');
             const statusText = document.getElementById('status-text');
@@ -288,11 +532,24 @@ function updateSystemStatus() {
             
             // Update component status
             updateComponentStatus(data);
+            
+            // Update charts
+            if (typeof Chart !== 'undefined' && trafficChart && threatChart) {
+                updateCharts(data);
+            } else {
+                console.log('Charts not available for update');
+            }
         })
         .catch(error => {
             console.error('Error updating system status:', error);
             document.getElementById('overall-status').className = 'status-indicator status-inactive';
-            document.getElementById('status-text').textContent = 'Error Loading Data';
+            document.getElementById('status-text').textContent = 'Error Loading Data: ' + error.message;
+            
+            // Set default values for elements
+            document.getElementById('active-ips-count').textContent = '0';
+            document.getElementById('suspicious-count').textContent = '0';
+            document.getElementById('malicious-count').textContent = '0';
+            document.getElementById('honeypot-interactions').textContent = '0';
         });
 }
 
@@ -366,9 +623,18 @@ function updateComponentStatus(data) {
 }
 
 function updateLatestActivity() {
+    console.log('Fetching latest activity...');
+    
     fetch('/api/system-status')
-        .then(response => response.json())
+        .then(response => {
+            console.log('Activity response status:', response.status);
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            return response.json();
+        })
         .then(data => {
+            console.log('Activity data received:', data);
             const activityDiv = document.getElementById('latest-activity');
             
             if (data.latest_activity) {
@@ -394,7 +660,7 @@ function updateLatestActivity() {
         })
         .catch(error => {
             console.error('Error updating latest activity:', error);
-            document.getElementById('latest-activity').innerHTML = '<div class="text-center py-3 text-danger">Error loading activity data</div>';
+            document.getElementById('latest-activity').innerHTML = '<div class="text-center py-3 text-danger">Error loading activity data: ' + error.message + '</div>';
         });
 }
 
@@ -455,6 +721,77 @@ function testMLModel() {
             button.disabled = false;
             button.innerHTML = '<i class="fas fa-play"></i> Run ML Test Scenarios';
         });
+}
+
+function resetSystem() {
+    const button = document.getElementById('reset-btn');
+    
+    // Confirm action
+    if (!confirm('Bu işlem tüm sistem istatistiklerini sıfırlayacak ve temiz bir demo ortamı hazırlayacak. Devam etmek istiyor musunuz?')) {
+        return;
+    }
+    
+    // Update button state
+    button.disabled = true;
+    button.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Sıfırlanıyor...';
+    
+    fetch('/api/reset-stats', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'}
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // Show success message
+            const alertDiv = document.createElement('div');
+            alertDiv.className = 'alert alert-success alert-dismissible fade show';
+            alertDiv.innerHTML = `
+                <strong>✅ Sistem Başarıyla Sıfırlandı!</strong> 
+                Tüm istatistikler temizlendi, demo için hazır.
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            `;
+            
+            // Insert alert at the top of the container
+            const container = document.querySelector('.container');
+            container.insertBefore(alertDiv, container.firstChild);
+            
+            // Clear traffic data
+            trafficData = {
+                timestamps: [],
+                activeIPs: [],
+                suspiciousIPs: [],
+                maliciousIPs: []
+            };
+            
+            // Reset charts
+            if (trafficChart) {
+                trafficChart.data.labels = [];
+                trafficChart.data.datasets.forEach(dataset => dataset.data = []);
+                trafficChart.update();
+            }
+            
+            if (threatChart) {
+                threatChart.data.datasets[0].data = [0, 0, 0];
+                threatChart.update();
+            }
+            
+            // Refresh data to show clean state
+            setTimeout(() => {
+                refreshData();
+            }, 1000);
+            
+        } else {
+            alert('Sıfırlama sırasında hata oluştu: ' + (data.error || 'Bilinmeyen hata'));
+        }
+    })
+    .catch(error => {
+        alert('Sıfırlama sırasında hata oluştu: ' + error.message);
+    })
+    .finally(() => {
+        // Reset button state
+        button.disabled = false;
+        button.innerHTML = '<i class="fas fa-redo"></i> Reset for Demo';
+    });
 }
 </script>
 {% endblock %} 

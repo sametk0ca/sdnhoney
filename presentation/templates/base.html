@@ -12,6 +12,8 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <!-- Font Awesome -->
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <!-- Prism.js for code highlighting -->
     <link href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-dark.min.css" rel="stylesheet">
     
@@ -276,28 +278,8 @@
                         </a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="{{ url_for('components') }}">
-                            <i class="fas fa-cubes"></i> Components
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="{{ url_for('architecture') }}">
-                            <i class="fas fa-sitemap"></i> Architecture
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="{{ url_for('demo') }}">
-                            <i class="fas fa-play-circle"></i> Live Demo
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="{{ url_for('monitoring') }}">
-                            <i class="fas fa-chart-line"></i> Monitoring
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="{{ url_for('ml_model') }}">
-                            <i class="fas fa-brain"></i> ML Model
+                        <a class="nav-link" href="{{ url_for('live_demo') }}" target="_blank">
+                            <i class="fas fa-terminal"></i> Live Terminal
                         </a>
                     </li>
                     <li class="nav-item">
@@ -326,9 +308,9 @@
                 <div class="col-md-3">
                     <h6>Quick Links</h6>
                     <ul class="list-unstyled">
-                        <li><a href="{{ url_for('demo') }}" class="text-light">Live Demo</a></li>
+                        <li><a href="{{ url_for('live_demo') }}" target="_blank" class="text-light">Live Terminal Demo</a></li>
                         <li><a href="{{ url_for('documentation') }}" class="text-light">Documentation</a></li>
-                        <li><a href="{{ url_for('monitoring') }}" class="text-light">System Status</a></li>
+                        <li><a href="{{ url_for('index') }}#monitoring" class="text-light">System Status</a></li>
                     </ul>
                 </div>
                 <div class="col-md-3">

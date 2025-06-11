@@ -10,9 +10,9 @@ The system consists of **7 major components** working together to provide intell
 ┌─────────────────────────────────────────────────────────────────┐
 │                    SDN HONEYPOT SYSTEM                         │
 ├─────────────────────────────────────────────────────────────────┤
-│  Dashboard (8090) ←→ Controller (8080) ←→ ML Model             │
+│  Presentation (9000) ←→ Controller (8080) ←→ ML Model          │
 │         ↕                    ↕                    ↕              │
-│  Real-time Stats      Traffic Analysis     Classification       │
+│  Web Interface      Traffic Analysis     Classification         │
 ├─────────────────────────────────────────────────────────────────┤
 │                    Mininet Topology                            │
 │  h6 (Client) → s1 → [s2,s3] → [s4,s5,s6,s7] → [h1,h2,h3,h4,h5] │
@@ -287,17 +287,13 @@ sudo python3 topology.py
 ## 📊 System Monitoring
 
 ### Dashboard Access
-- **Main Dashboard**: http://localhost:8090
-- **Presentation**: http://localhost:9000
+- **Presentation Website**: http://localhost:9000
 - **Controller API**: http://localhost:8080/api/stats
 
 ### Real-time Statistics
 ```bash
 # Check controller stats
 curl -s http://localhost:8080/api/stats | python3 -m json.tool
-
-# Check dashboard stats  
-curl -s http://localhost:8090/api/stats | python3 -m json.tool
 
 # Monitor honeypot activity
 tail -f logs/triage_honeypot.log
@@ -439,6 +435,6 @@ This project is for **educational and research purposes** only. Not intended for
 
 **⚡ Quick Start**: `source venv/bin/activate && ./start_system.sh`
 
-**📊 Dashboard**: http://localhost:8090
+**📊 Dashboard**: http://localhost:9000
 
 **🔍 API**: http://localhost:8080/api/stats

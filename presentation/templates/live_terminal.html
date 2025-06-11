@@ -1,0 +1,321 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Live Terminal - SDN Honeypot System</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        body {
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+            color: white;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            min-height: 100vh;
+            margin: 0;
+            padding: 0;
+        }
+
+        .container-fluid {
+            height: 100vh;
+            padding: 1rem;
+        }
+
+        .terminal-container {
+            background: #000;
+            border: 2px solid #333;
+            border-radius: 8px;
+            height: 100%;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .terminal-header {
+            background: #2d2d2d;
+            padding: 0.5rem 1rem;
+            border-bottom: 1px solid #555;
+            display: flex;
+            justify-content: between;
+            align-items: center;
+        }
+
+        .terminal-dots {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+        }
+
+        .dot.red { background: #ff5f56; }
+        .dot.yellow { background: #ffbd2e; }
+        .dot.green { background: #27ca3f; }
+
+        .terminal-title {
+            color: #ccc;
+            font-size: 0.9rem;
+            margin-left: 1rem;
+        }
+
+        .back-btn {
+            color: #ccc;
+            text-decoration: none;
+            padding: 0.25rem 0.5rem;
+            border-radius: 4px;
+            transition: all 0.3s ease;
+            margin-left: auto;
+        }
+
+        .back-btn:hover {
+            background: #555;
+            color: white;
+            text-decoration: none;
+        }
+
+        .terminal-body {
+            height: calc(100% - 60px);
+            padding: 1rem;
+            overflow-y: auto;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            line-height: 1.4;
+        }
+
+        .terminal-output {
+            color: #00ff00;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+        }
+
+        .terminal-input {
+            display: flex;
+            align-items: center;
+            margin-top: 0.5rem;
+        }
+
+        .terminal-prompt {
+            color: #00ff00;
+            margin-right: 0.5rem;
+        }
+
+        .terminal-command {
+            background: transparent;
+            border: none;
+            color: #00ff00;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            outline: none;
+            flex: 1;
+        }
+
+        .help-panel {
+            position: fixed;
+            right: 20px;
+            top: 20px;
+            width: 350px;
+            background: rgba(0, 0, 0, 0.9);
+            border: 1px solid #333;
+            border-radius: 8px;
+            padding: 1rem;
+            z-index: 1000;
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+
+        .help-title {
+            color: #00ff88;
+            font-weight: bold;
+            margin-bottom: 1rem;
+            text-align: center;
+        }
+
+        .command-example {
+            background: #1a1a1a;
+            padding: 0.5rem;
+            margin: 0.5rem 0;
+            border-radius: 4px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.8rem;
+            color: #00ff88;
+        }
+
+        .status-indicator {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: rgba(0, 0, 0, 0.8);
+            padding: 0.5rem 1rem;
+            border-radius: 20px;
+            border: 1px solid #333;
+        }
+
+        .status-online {
+            color: #00ff00;
+        }
+    </style>
+</head>
+<body>
+    <div class="container-fluid">
+        <div class="terminal-container">
+            <div class="terminal-header">
+                <div class="terminal-dots">
+                    <div class="dot red"></div>
+                    <div class="dot yellow"></div>
+                    <div class="dot green"></div>
+                </div>
+                <div class="terminal-title">SDN Honeypot Live Terminal</div>
+                <a href="http://localhost:9000" class="back-btn">
+                    <i class="fas fa-arrow-left"></i> Ana Sayfa
+                </a>
+            </div>
+            <div class="terminal-body" id="terminal-body">
+                <div class="terminal-output" id="terminal-output"></div>
+                <div class="terminal-input">
+                    <span class="terminal-prompt">mininet></span>
+                    <input type="text" class="terminal-command" id="terminal-command" autocomplete="off" autofocus>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Help Panel -->
+    <div class="help-panel">
+        <div class="help-title">🍯 Demo Komutları</div>
+        
+        <h6 style="color: #00ff88; margin-top: 1rem;">📡 Network Test:</h6>
+        <div class="command-example">pingall</div>
+        <div class="command-example">h1 ping h4</div>
+        
+        <h6 style="color: #00ff88; margin-top: 1rem;">🌐 Normal Traffic:</h6>
+        <div class="command-example">h6 curl 10.0.0.1:8001</div>
+        <div class="command-example">h6 curl 10.0.0.2:8002</div>
+        <div class="command-example">h6 curl 10.0.0.3:8003</div>
+        
+        <h6 style="color: #00ff88; margin-top: 1rem;">🍯 Honeypot Access:</h6>
+        <div class="command-example">h6 curl 10.0.0.4:8004</div>
+        <div class="command-example">h6 curl 10.0.0.5:8005</div>
+        
+        <h6 style="color: #00ff88; margin-top: 1rem;">🚨 Malicious Traffic:</h6>
+        <div class="command-example">h6 curl -X POST -d "username=admin&password=admin" 10.0.0.4:8004</div>
+        <div class="command-example">h6 curl -X POST -d "username=hacker&password=123" 10.0.0.4:8004</div>
+        
+        <h6 style="color: #00ff88; margin-top: 1rem;">📊 System:</h6>
+        <div class="command-example">status</div>
+        <div class="command-example">help</div>
+    </div>
+
+    <!-- Status Indicator -->
+    <div class="status-indicator">
+        <span class="status-online">● Live Demo Active</span>
+    </div>
+
+    <!-- Socket.IO -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js"></script>
+    <script>
+        const socket = io();
+        const terminalOutput = document.getElementById('terminal-output');
+        const terminalCommand = document.getElementById('terminal-command');
+        const terminalBody = document.getElementById('terminal-body');
+
+        // Terminal functionality
+        socket.on('connect', function() {
+            addOutput('🟢 Connected to SDN Honeypot Live Demo\n', 'success');
+            socket.emit('create_terminal');
+        });
+
+        socket.on('terminal_created', function(data) {
+            if (data.success) {
+                addOutput('✅ Terminal session created\n', 'success');
+            } else {
+                addOutput('❌ Failed to create terminal: ' + data.error + '\n', 'error');
+            }
+        });
+
+        socket.on('terminal_output', function(data) {
+            addOutput(data.output, 'output');
+        });
+
+        socket.on('terminal_error', function(data) {
+            addOutput('❌ Error: ' + data.error + '\n', 'error');
+        });
+
+        // Handle command input
+        terminalCommand.addEventListener('keydown', function(e) {
+            if (e.key === 'Enter') {
+                const command = terminalCommand.value.trim();
+                if (command) {
+                    // Show command being executed
+                    addOutput('mininet> ' + command + '\n', 'command');
+                    
+                    // Send to server
+                    socket.emit('terminal_input', { input: command + '\n' });
+                    
+                    // Clear input
+                    terminalCommand.value = '';
+                }
+            }
+        });
+
+        function addOutput(text, type = 'output') {
+            const colors = {
+                'success': '#00ff00',
+                'error': '#ff5555',
+                'command': '#ffff55',
+                'output': '#00ff88'
+            };
+
+            const span = document.createElement('span');
+            span.style.color = colors[type] || colors.output;
+            span.textContent = text;
+            
+            terminalOutput.appendChild(span);
+            
+            // Auto-scroll to bottom
+            terminalBody.scrollTop = terminalBody.scrollHeight;
+        }
+
+        // Focus input when clicking terminal
+        terminalBody.addEventListener('click', function() {
+            terminalCommand.focus();
+        });
+
+        // Command history
+        let commandHistory = [];
+        let historyIndex = -1;
+
+        terminalCommand.addEventListener('keydown', function(e) {
+            if (e.key === 'ArrowUp') {
+                e.preventDefault();
+                if (commandHistory.length > 0 && historyIndex > 0) {
+                    historyIndex--;
+                    terminalCommand.value = commandHistory[historyIndex];
+                } else if (commandHistory.length > 0 && historyIndex === -1) {
+                    historyIndex = commandHistory.length - 1;
+                    terminalCommand.value = commandHistory[historyIndex];
+                }
+            } else if (e.key === 'ArrowDown') {
+                e.preventDefault();
+                if (historyIndex < commandHistory.length - 1) {
+                    historyIndex++;
+                    terminalCommand.value = commandHistory[historyIndex];
+                } else {
+                    historyIndex = -1;
+                    terminalCommand.value = '';
+                }
+            } else if (e.key === 'Enter') {
+                const command = terminalCommand.value.trim();
+                if (command && commandHistory[commandHistory.length - 1] !== command) {
+                    commandHistory.push(command);
+                    if (commandHistory.length > 50) {
+                        commandHistory.shift();
+                    }
+                }
+                historyIndex = -1;
+            }
+        });
+    </script>
+</body>
+</html> 
