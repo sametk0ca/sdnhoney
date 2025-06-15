@@ -36,18 +36,18 @@ The system consists of **7 major components** working together to provide intell
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
-│                    SDN HONEYPOT SYSTEM                         │
+│                    SDN HONEYPOT SYSTEM                          │
 ├─────────────────────────────────────────────────────────────────┤
-│  Presentation (9000) ←→ Controller (8080) ←→ ML Model          │
-│         ↕                    ↕                    ↕              │
+│  Presentation (9000) ←→ Controller (8080) ←→ ML Model           │
+│         ↕                    ↕                    ↕             │
 │  Web Interface      Traffic Analysis     Classification         │
 ├─────────────────────────────────────────────────────────────────┤
-│                    Mininet Topology                            │
-│  h6 (Client) → s1 → [s2,s3] → [s4,s5,s6,s7] → [h1,h2,h3,h4,h5] │
+│                    Mininet Topology                             │
+│  h6 (Client) → s1 → [s2,s3] → [s4,s5,s6,s7] → [h1,h2,h3,h4,h5]  │
 │                                                                 │
-│  Normal Servers: h1, h2, h3 (Load Balanced)                   │
-│  Triage Honeypot: h4 (ML Classification)                      │
-│  Deep Honeypot: h5 (Advanced Deception)                       │
+│  Normal Servers: h1, h2, h3                                     │
+│  Triage Honeypot: h4 (ML Classification)                        │
+│  Deep Honeypot: h5 (Advanced Deception)                         │
 └─────────────────────────────────────────────────────────────────┘
 ```
 
