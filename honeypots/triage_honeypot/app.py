@@ -7,6 +7,7 @@ import json
 import datetime
 import requests
 from collections import defaultdict
+import logging
 
 # Import the simplified ML model
 sys.path.append(os.path.join(os.path.dirname(__file__), '../../ml_model'))
@@ -14,6 +15,17 @@ from simulate_model import classify_traffic
 
 app = Flask(__name__)
 app.secret_key = 'triage_honeypot_secret_key_999'
+
+# Setup logging
+logging.basicConfig(
+    level=logging.DEBUG,
+    format='%(asctime)s - %(levelname)s - %(message)s',
+    handlers=[
+        logging.FileHandler('/home/samet/Desktop/sdnhoney/logs/h4_debug.log'),
+        logging.StreamHandler()
+    ]
+)
+logger = logging.getLogger(__name__)
 
 # Logging directory
 LOG_DIR = os.path.join(os.path.dirname(__file__), '../../logs')
@@ -71,23 +83,41 @@ def analyze_traffic_with_ml(source_ip, username=None):
 
 def send_to_controller(classification, source_ip, risk_score, ml_prediction=None):
     """Send classification result to SDN controller"""
-    try:
-        controller_url = 'http://127.0.0.1:8080/honeypot/classification'
-        data = {
-            'source_ip': source_ip,
-            'classification': classification,
-            'risk_score': risk_score * 100,  # Convert to 0-100 scale
-            'honeypot_type': 'triage',
-            'ml_prediction': ml_prediction,  # Include binary ML prediction
-            'timestamp': datetime.datetime.now().isoformat()
-        }
-        
-        response = requests.post(controller_url, json=data, timeout=2)
-        print(f"Sent to controller: IP={source_ip}, Class={classification}, ML={ml_prediction}, Risk={risk_score:.3f}")
-        return response.status_code == 200
-    except Exception as e:
-        print(f"Failed to send to controller: {e}")
-        return False
+    logger.info(f"🔄 FUNCTION CALLED: send_to_controller({classification}, {source_ip}, {risk_score}, {ml_prediction})")
+    
+    # Simple localhost-focused approach
+    controller_ips = [
+        '127.0.0.1',       # Primary - localhost controller
+        '192.168.1.100',   # Host system IP fallback
+        '10.0.0.1',        # Default gateway fallback
+    ]
+    
+    for host_ip in controller_ips:
+        try:
+            controller_url = f'http://{host_ip}:8080/honeypot/classification'
+            data = {
+                'source_ip': source_ip,
+                'classification': classification,
+                'risk_score': risk_score * 100,  # Convert to 0-100 scale
+                'honeypot_type': 'triage',
+                'ml_prediction': ml_prediction,  # Include binary ML prediction
+                'timestamp': datetime.datetime.now().isoformat()
+            }
+            
+            logger.debug(f"[DEBUG] Attempting to send to controller: {controller_url}")
+            logger.debug(f"[DEBUG] Data: {data}")
+            
+            response = requests.post(controller_url, json=data, timeout=1)
+            logger.debug(f"[DEBUG] Response status: {response.status_code}")
+            logger.debug(f"[DEBUG] Response text: {response.text}")
+            logger.info(f"✅ SUCCESS: Sent to controller via {host_ip} - IP={source_ip}, Class={classification}, ML={ml_prediction}, Risk={risk_score:.3f}")
+            return response.status_code == 200
+        except Exception as e:
+            logger.debug(f"[DEBUG] Failed to reach controller at {host_ip}: {e}")
+            continue
+    
+    logger.error(f"[ERROR] Could not reach controller at any IP: {controller_ips}")
+    return False
 
 # HTML Templates (same as normal servers to appear legitimate)
 LOGIN_TEMPLATE = '''
@@ -135,18 +165,25 @@ LOGIN_TEMPLATE = '''
 @app.route('/', methods=['GET', 'POST'])
 def login():
     client_ip = request.remote_addr
+    logger.info(f"📥 REQUEST RECEIVED: {request.method} from {client_ip}")
     
     if request.method == 'POST':
+        logger.info("📝 Processing POST request...")
         username = request.form.get('username')
         password = request.form.get('password')
+        logger.info(f"👤 Login attempt: {username}/{password}")
         
         # Always fail authentication in triage honeypot
         failed_attempts[client_ip] += 1
+        logger.info(f"📊 Failed attempts for {client_ip}: {failed_attempts[client_ip]}")
         
         # Analyze traffic patterns using ML model
+        logger.info("🤖 Starting ML analysis...")
         classification, risk_score, ml_prediction = analyze_traffic_with_ml(client_ip, username)
+        logger.info(f"✅ ML analysis complete: {classification}, {risk_score}, {ml_prediction}")
         
         # Log everything with ML results
+        logger.info("📋 Logging request...")
         log_request('login_attempt', client_ip, username=username, 
                    extra_data={
                        'classification': classification, 
@@ -154,9 +191,12 @@ def login():
                        'ml_prediction': ml_prediction,
                        'password_length': len(password) if password else 0
                    })
+        logger.info("✅ Logging complete")
         
         # Send results to controller
+        logger.info("🔄 About to call send_to_controller...")
         send_to_controller(classification, client_ip, risk_score, ml_prediction)
+        logger.info("✅ send_to_controller call complete")
         
         # Always show invalid credentials error
         return render_template_string(LOGIN_TEMPLATE, 
@@ -227,14 +267,14 @@ def ml_status():
 
 if __name__ == '__main__':
     port = int(sys.argv[1]) if len(sys.argv) > 1 else 8004
-    print(f"Starting Triage Honeypot on port {port}")
-    print(f"Using simplified ML model for binary classification (1=malicious, 0=benign)")
+    logger.info(f"Starting Triage Honeypot on port {port}")
+    logger.info(f"Using simplified ML model for binary classification (1=malicious, 0=benign)")
     
     # Test ML model on startup
     try:
         test_pred, test_score = classify_traffic('test.ip', {'username': 'admin', 'user_agent': 'curl'})
-        print(f"ML Model test: prediction={test_pred}, score={test_score:.3f}")
+        logger.info(f"ML Model test: prediction={test_pred}, score={test_score:.3f}")
     except Exception as e:
-        print(f"ML Model error: {e}")
+        logger.error(f"ML Model error: {e}")
     
     app.run(host='0.0.0.0', port=port, debug=False) 

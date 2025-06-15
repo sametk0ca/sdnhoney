@@ -7,6 +7,7 @@ import json
 import datetime
 import io
 import time
+import requests
 from collections import defaultdict
 
 app = Flask(__name__)
@@ -40,6 +41,35 @@ def log_extensive(action, source_ip, data=None):
     log_file = os.path.join(LOG_DIR, 'deep_honeypot.log')
     with open(log_file, 'a') as f:
         f.write(json.dumps(log_entry) + '\n')
+
+def send_to_controller(classification, source_ip, risk_score=1.0, ml_prediction=1):
+    """Send classification result to SDN controller"""
+    # Deep honeypot always classifies as malicious since users shouldn't reach here
+    controller_ips = [
+        '127.0.0.1',       # Primary - localhost controller
+        '192.168.1.100',   # Host system IP fallback
+        '10.0.0.1',        # Default gateway fallback
+    ]
+    
+    for host_ip in controller_ips:
+        try:
+            controller_url = f'http://{host_ip}:8080/honeypot/classification'
+            data = {
+                'source_ip': source_ip,
+                'classification': classification,
+                'risk_score': risk_score * 100,  # Convert to 0-100 scale
+                'honeypot_type': 'deep',
+                'ml_prediction': ml_prediction,  # Binary: 1=malicious, 0=benign
+                'timestamp': datetime.datetime.now().isoformat()
+            }
+            
+            response = requests.post(controller_url, json=data, timeout=1)
+            if response.status_code == 200:
+                return True
+        except Exception as e:
+            continue
+    
+    return False
 
 # HTML Templates
 LOGIN_TEMPLATE = '''
@@ -220,11 +250,16 @@ def login():
             'session_id': session_id
         })
         
+        # Send to controller - deep honeypot always indicates malicious activity
+        send_to_controller('malicious', client_ip, 1.0, 1)
+        
         # Always "succeed" after a delay to seem realistic
         time.sleep(1)  # Simulate processing time
         return redirect(url_for('admin'))
     
     log_extensive('page_visit', client_ip)
+    # Even visiting deep honeypot is suspicious
+    send_to_controller('suspicious', client_ip, 0.8, 1)
     return render_template_string(LOGIN_TEMPLATE)
 
 @app.route('/admin')
@@ -237,6 +272,9 @@ def admin():
         'username': session['username'],
         'admin_dashboard_viewed': True
     })
+    
+    # Admin access in deep honeypot is highly malicious
+    send_to_controller('malicious', client_ip, 1.0, 1)
     
     return render_template_string(FAKE_ADMIN_TEMPLATE,
                                 username=session['username'],
@@ -252,6 +290,9 @@ def files():
         'attempted_file_access': True
     })
     
+    # File access attempt is malicious
+    send_to_controller('malicious', client_ip, 1.0, 1)
+    
     return render_template_string(FAKE_FILE_MANAGER)
 
 @app.route('/admin/download/<filename>')
@@ -264,6 +305,9 @@ def download_fake_file(filename):
         'filename': filename,
         'highly_suspicious': True
     })
+    
+    # File download attempt is extremely malicious
+    send_to_controller('malicious', client_ip, 1.0, 1)
     
     # Generate fake file content
     fake_content = f"""

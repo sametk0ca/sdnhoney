@@ -101,7 +101,9 @@
                         </h5>
                     </div>
                     <div class="card-body">
-                        <canvas id="trafficChart" height="100"></canvas>
+                        <div style="position: relative; height: 500px;">
+                            <canvas id="trafficChart"></canvas>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -263,30 +265,7 @@
     </div>
 </section>
 
-<!-- ML Model Testing -->
-<section class="py-5">
-    <div class="container">
-        <div class="row">
-            <div class="col-12">
-                <div class="card">
-                    <div class="card-header">
-                        <h5 class="mb-0">
-                            <i class="fas fa-flask text-warning"></i>
-                            ML Model Testing
-                        </h5>
-                    </div>
-                    <div class="card-body">
-                        <p>Test the machine learning model with different scenarios to see classification results.</p>
-                        <button class="btn btn-warning" onclick="testMLModel()">
-                            <i class="fas fa-play"></i> Run ML Test Scenarios
-                        </button>
-                        <div id="ml-test-results" class="mt-3"></div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-</section>
+
 {% endblock %}
 
 {% block extra_js %}
@@ -399,12 +378,18 @@ function initializeCharts() {
                 },
                 y: {
                     ticks: {
-                        color: 'white'
+                        color: 'white',
+                        stepSize: 1,
+                        callback: function(value) {
+                            return Number.isInteger(value) ? value : '';
+                        }
                     },
                     grid: {
                         color: 'rgba(255, 255, 255, 0.1)'
                     },
-                    beginAtZero: true
+                    beginAtZero: false,
+                    min: 1,
+                    max: 10
                 }
             }
         }
@@ -448,11 +433,16 @@ function initializeCharts() {
 function updateCharts(data) {
     const currentTime = new Date().toLocaleTimeString();
     
+    // Use real controller data without random variance
+    const baseActiveIPs = Math.max(1, Math.min(10, data.controller.stats?.active_ips || 0));
+    const baseSuspiciousIPs = Math.max(1, Math.min(10, data.controller.stats?.suspicious_ips?.length || 0));
+    const baseMaliciousIPs = Math.max(1, Math.min(10, data.controller.stats?.malicious_ips?.length || 0));
+    
     // Update traffic data
     trafficData.timestamps.push(currentTime);
-    trafficData.activeIPs.push(data.controller.stats?.active_ips || 0);
-    trafficData.suspiciousIPs.push(data.controller.stats?.suspicious_ips?.length || 0);
-    trafficData.maliciousIPs.push(data.controller.stats?.malicious_ips?.length || 0);
+    trafficData.activeIPs.push(Math.round(baseActiveIPs));
+    trafficData.suspiciousIPs.push(Math.round(baseSuspiciousIPs));
+    trafficData.maliciousIPs.push(Math.round(baseMaliciousIPs));
     
     // Keep only last 20 data points
     if (trafficData.timestamps.length > 20) {
@@ -683,45 +673,7 @@ function toggleAutoRefresh() {
     }
 }
 
-function testMLModel() {
-    const button = event.target;
-    const resultsDiv = document.getElementById('ml-test-results');
-    
-    button.disabled = true;
-    button.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Running Tests...';
-    
-    fetch('/api/ml-test')
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                let resultsHTML = '<h6 class="mt-3">Test Results:</h6><div class="table-responsive"><table class="table table-dark table-striped"><thead><tr><th>Scenario</th><th>Risk Score</th><th>Prediction</th><th>Classification</th></tr></thead><tbody>';
-                
-                data.results.forEach(result => {
-                    const badgeClass = result.prediction === 1 ? 'bg-danger' : 'bg-success';
-                    resultsHTML += `
-                        <tr>
-                            <td>${result.scenario}</td>
-                            <td>${result.risk_score}</td>
-                            <td>${result.prediction}</td>
-                            <td><span class="badge ${badgeClass}">${result.classification}</span></td>
-                        </tr>
-                    `;
-                });
-                
-                resultsHTML += '</tbody></table></div>';
-                resultsDiv.innerHTML = resultsHTML;
-            } else {
-                resultsDiv.innerHTML = `<div class="alert alert-danger">Error: ${data.error}</div>`;
-            }
-        })
-        .catch(error => {
-            resultsDiv.innerHTML = `<div class="alert alert-danger">Error running ML tests: ${error.message}</div>`;
-        })
-        .finally(() => {
-            button.disabled = false;
-            button.innerHTML = '<i class="fas fa-play"></i> Run ML Test Scenarios';
-        });
-}
+
 
 function resetSystem() {
     const button = document.getElementById('reset-btn');

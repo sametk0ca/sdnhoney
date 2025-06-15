@@ -241,6 +241,16 @@
             margin-top: 50px;
         }
 
+        .pulse-animation {
+            animation: pulse 2s infinite;
+        }
+        
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); box-shadow: 0 0 20px rgba(40, 167, 69, 0.5); }
+            100% { transform: scale(1); }
+        }
+
         @media (max-width: 768px) {
             .hero-section {
                 padding: 50px 0;
@@ -278,8 +288,8 @@
                         </a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="{{ url_for('live_demo') }}" target="_blank">
-                            <i class="fas fa-terminal"></i> Live Terminal
+                        <a class="nav-link" href="{{ url_for('monitoring') }}">
+                            <i class="fas fa-chart-line"></i> Monitoring
                         </a>
                     </li>
                     <li class="nav-item">
@@ -308,7 +318,7 @@
                 <div class="col-md-3">
                     <h6>Quick Links</h6>
                     <ul class="list-unstyled">
-                        <li><a href="{{ url_for('live_demo') }}" target="_blank" class="text-light">Live Terminal Demo</a></li>
+                        <li><a href="{{ url_for('monitoring') }}" class="text-light">Real-time Monitoring</a></li>
                         <li><a href="{{ url_for('documentation') }}" class="text-light">Documentation</a></li>
                         <li><a href="{{ url_for('index') }}#monitoring" class="text-light">System Status</a></li>
                     </ul>

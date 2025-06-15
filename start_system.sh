@@ -20,19 +20,15 @@ PROJECT_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 CONTROLLER_PORT=6653
 API_PORT=8080
 PRESENTATION_PORT=9000
-LIVE_DEMO_PORT=9001
-
 # Log files
 LOG_DIR="$PROJECT_ROOT/logs"
 CONTROLLER_LOG="$LOG_DIR/controller.log"
 PRESENTATION_LOG="$LOG_DIR/presentation.log"
-LIVE_DEMO_LOG="$LOG_DIR/live_demo.log"
 
 # PID files for process management
 PID_DIR="$PROJECT_ROOT/pids"
 CONTROLLER_PID="$PID_DIR/controller.pid"
 PRESENTATION_PID="$PID_DIR/presentation.pid"
-LIVE_DEMO_PID="$PID_DIR/live_demo.pid"
 
 # Create necessary directories
 mkdir -p "$LOG_DIR" "$PID_DIR"
@@ -106,10 +102,7 @@ cleanup() {
         rm -f "$PRESENTATION_PID"
     fi
     
-    if [ -f "$LIVE_DEMO_PID" ]; then
-        kill $(cat "$LIVE_DEMO_PID") 2>/dev/null || true
-        rm -f "$LIVE_DEMO_PID"
-    fi
+
     
     # Clean mininet
     sudo mn -c >/dev/null 2>&1 || true
@@ -120,6 +113,8 @@ cleanup() {
 # Set trap for cleanup on script exit
 trap cleanup EXIT INT TERM
 
+
+
 # Main startup function
 main() {
     print_header "🛡️  SDN HONEYPOT SYSTEM - COMPLETE STARTUP"
@@ -129,7 +124,7 @@ main() {
     print_header "\n🧹 Step 1: Cleaning Previous Mininet Instances"
     print_status "Running: sudo mn -c"
     sudo mn -c
-    sleep 2
+    sleep 1
     print_success "Mininet cleaned successfully"
     
     # Step 2: Start SDN Controller
@@ -153,7 +148,7 @@ main() {
     
     # Wait a moment for controller to fully initialize
     print_status "Allowing controller to initialize..."
-    sleep 3
+    sleep 2
     
     # Step 3: Start Presentation Website
     print_header "\n🌐 Step 3: Starting Presentation Website"
@@ -163,16 +158,8 @@ main() {
         start_presentation
     fi
     
-    # Step 4: Start Live Demo Terminal Server
-    print_header "\n🔴 Step 4: Starting Live Demo Terminal Server"
-    if check_port $LIVE_DEMO_PORT; then
-        print_warning "Live Demo already running on port $LIVE_DEMO_PORT"
-    else
-        start_live_demo
-    fi
-    
-    # Step 5: Start Network Topology and Services
-    print_header "\n🕸️  Step 5: Starting Network Topology"
+    # Step 4: Start Network Topology and Services
+    print_header "\n🕸️  Step 4: Starting Network Topology"
     print_status "This will start Mininet topology with all hosts and services..."
     print_warning "This step requires interactive input - the Mininet CLI will open"
     print_status "You can run 'pingall' to test connectivity and demo commands"
@@ -198,15 +185,7 @@ start_presentation() {
     wait_for_service $PRESENTATION_PORT "Presentation"
 }
 
-# Function to start live demo server
-start_live_demo() {
-    print_status "Starting live demo terminal server..."
-    cd "$PROJECT_ROOT/presentation"
-    nohup python3 live_demo_server.py > "$LIVE_DEMO_LOG" 2>&1 &
-    echo $! > "$LIVE_DEMO_PID"
-    
-    wait_for_service $LIVE_DEMO_PORT "Live Demo Terminal"
-}
+
 
 # Function to show system status
 show_system_status() {
@@ -230,17 +209,9 @@ show_system_status() {
         echo -e "${RED}❌ Presentation${NC}        : Not Running"
     fi
     
-    # Live Demo status
-    if check_port $LIVE_DEMO_PORT; then
-        echo -e "${GREEN}✅ Live Demo Terminal${NC}  : Running (Port $LIVE_DEMO_PORT)"
-    else
-        echo -e "${RED}❌ Live Demo Terminal${NC}  : Not Running"
-    fi
-    
     echo "=================================="
     echo -e "${CYAN}🌐 Access URLs:${NC}"
     echo "   Presentation   : http://localhost:$PRESENTATION_PORT"
-    echo "   Live Demo      : http://localhost:$LIVE_DEMO_PORT"
     echo "   Controller API : http://localhost:$API_PORT/api/stats"
     echo "=================================="
     

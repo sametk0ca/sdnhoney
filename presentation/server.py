@@ -29,10 +29,7 @@ def components():
     """Components overview page"""
     return render_template('components.html')
 
-@app.route('/live-demo')
-def live_demo():
-    """Redirect to live demo server on port 9001"""
-    return redirect('http://localhost:9001')
+
 
 @app.route('/architecture')
 def architecture():
@@ -180,7 +177,7 @@ def reset_stats():
             'controller.log',
             'presentation.log',
             'dashboard.log',
-            'live_demo.log',
+
             'h1_service.log',
             'h2_service.log', 
             'h3_service.log',
@@ -439,6 +436,6 @@ if __name__ == '__main__':
     print("   • Live Documentation (README)")
     print("   • Real-time System Monitoring")
     print("   • ML Model Analysis")
-    print("   • Live Terminal (redirects to port 9001)")
+
     print("🎯 Perfect for academic presentations and demos!")
     app.run(host='0.0.0.0', port=port, debug=True) 

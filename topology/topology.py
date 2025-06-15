@@ -76,12 +76,10 @@ def setup_network():
         autoStaticArp=True
     )
     
-    # No NAT - h6 is treated as external source
-    
     info("*** Starting network\n")
     net.start()
     info("*** Waiting for controller to settle...\n")
-    time.sleep(5)
+    time.sleep(3)
 
     
     
@@ -152,11 +150,11 @@ def setup_host_services(net):
         else:
             info(f"Warning: Service path {service_path} does not exist!\n")
     
-    # Give services more time to start
+    # Give services time to start
     info("Waiting for services to start...\n")
-    time.sleep(5)  # Increased to 5 seconds
+    time.sleep(3)  # Reduced to 3 seconds
     
-    # Check if services started successfully
+    # Check if services started successfully (with timeout)
     info("*** Checking service status...\n")
     for host in hosts:
         if host.name == 'h6':
@@ -175,19 +173,25 @@ def setup_host_services(net):
         else:
             continue
             
-        # Test if the service is listening using the host's network namespace
-        result = host.cmd(f'netstat -ln | grep :{port}')
-        if result.strip():
-            info(f"✅ {host.name} service running on port {port}\n")
-        else:
-            info(f"❌ {host.name} service failed to start on port {port}\n")
-            # Show any error logs
-            log_file = f"{logs_dir}/{host.name}_service.log"
-            if os.path.exists(log_file):
-                info(f"Log file content for {host.name}:\n")
-                with open(log_file, 'r') as f:
-                    log_content = f.read()[-500:]  # Show last 500 characters
-                    info(f"{log_content}\n")
+        # Test if the service is listening with timeout
+        try:
+            result = host.cmd(f'timeout 2 netstat -ln | grep :{port} || echo "timeout"')
+            if result.strip() and 'timeout' not in result:
+                info(f"✅ {host.name} service running on port {port}\n")
+            else:
+                info(f"❌ {host.name} service failed to start on port {port}\n")
+                # Show brief error info without reading large logs
+                log_file = f"{logs_dir}/{host.name}_service.log"
+                if os.path.exists(log_file):
+                    try:
+                        with open(log_file, 'r') as f:
+                            lines = f.readlines()
+                            if lines:
+                                info(f"Last log line: {lines[-1].strip()}\n")
+                    except:
+                        info(f"Could not read log file\n")
+        except Exception as e:
+            info(f"⚠️ {host.name} service status check failed: {e}\n")
 
 if __name__ == '__main__':
     # Ensure script is run with sudo
