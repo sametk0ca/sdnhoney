@@ -17,9 +17,11 @@ NC='\033[0m' # No Color
 
 # Configuration
 PROJECT_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+VENV_PATH="$PROJECT_ROOT/venv_sdnhoney"
 CONTROLLER_PORT=6653
 API_PORT=8080
 PRESENTATION_PORT=9000
+
 # Log files
 LOG_DIR="$PROJECT_ROOT/logs"
 CONTROLLER_LOG="$LOG_DIR/controller.log"
@@ -32,6 +34,21 @@ PRESENTATION_PID="$PID_DIR/presentation.pid"
 
 # Create necessary directories
 mkdir -p "$LOG_DIR" "$PID_DIR"
+
+# Function to run Python with virtual environment
+run_python_venv() {
+    "$VENV_PATH/bin/python" "$@"
+}
+
+# Function to run Python with virtual environment and sudo
+run_python_venv_sudo() {
+    sudo "$VENV_PATH/bin/python" "$@"
+}
+
+# Function to run Python with virtual environment and sudo for Mininet
+run_mininet_cmd() {
+    sudo /home/samet/Desktop/sdnhoney/venv_sdnhoney/bin/python "$@"
+}
 
 # Function to print colored output
 print_status() {
@@ -102,18 +119,14 @@ cleanup() {
         rm -f "$PRESENTATION_PID"
     fi
     
-
-    
-    # Clean mininet
-    sudo mn -c >/dev/null 2>&1 || true
+    # Clean mininet with virtual environment
+    sudo /home/samet/Desktop/sdnhoney/venv_sdnhoney/bin/python -c "from mininet.clean import cleanup; cleanup()" >/dev/null 2>&1 || true
     
     print_success "Cleanup completed"
 }
 
 # Set trap for cleanup on script exit
 trap cleanup EXIT INT TERM
-
-
 
 # Main startup function
 main() {
@@ -122,9 +135,9 @@ main() {
     
     # Step 1: Clean previous Mininet instances
     print_header "\n🧹 Step 1: Cleaning Previous Mininet Instances"
-    print_status "Running: sudo mn -c"
-    sudo mn -c
-    sleep 1
+    print_status "Running Mininet cleanup with virtual environment..."
+    sudo /home/samet/Desktop/sdnhoney/venv_sdnhoney/bin/python -c "from mininet.clean import cleanup; cleanup()"
+    sleep 2
     print_success "Mininet cleaned successfully"
     
     # Step 2: Start SDN Controller
@@ -135,7 +148,7 @@ main() {
         print_warning "Controller already running on port $CONTROLLER_PORT"
     else
         print_status "Starting Ryu SDN Controller..."
-        nohup ryu-manager controller/controller.py --wsapi-port 8080\
+        nohup "$VENV_PATH/bin/ryu-manager" controller/controller.py --wsapi-port 8080\
             --observe-links \
             --verbose \
             > "$CONTROLLER_LOG" 2>&1 &
@@ -148,7 +161,7 @@ main() {
     
     # Wait a moment for controller to fully initialize
     print_status "Allowing controller to initialize..."
-    sleep 2
+    sleep 3
     
     # Step 3: Start Presentation Website
     print_header "\n🌐 Step 3: Starting Presentation Website"
@@ -170,7 +183,7 @@ main() {
     
     print_header "\n🚀 Starting Mininet Topology..."
     cd "$PROJECT_ROOT/topology"
-    sudo python3 topology.py
+    run_mininet_cmd topology.py
     
     print_header "\n✅ Topology session ended"
 }
@@ -179,13 +192,11 @@ main() {
 start_presentation() {
     print_status "Starting presentation website..."
     cd "$PROJECT_ROOT/presentation"
-    nohup python3 server.py > "$PRESENTATION_LOG" 2>&1 &
+    nohup "$VENV_PATH/bin/python" server.py > "$PRESENTATION_LOG" 2>&1 &
     echo $! > "$PRESENTATION_PID"
     
     wait_for_service $PRESENTATION_PORT "Presentation"
 }
-
-
 
 # Function to show system status
 show_system_status() {
@@ -231,15 +242,23 @@ check_root() {
 check_dependencies() {
     print_status "Checking dependencies..."
     
-    # Check if ryu-manager is available
-    if ! command -v ryu-manager &> /dev/null; then
-        print_error "ryu-manager not found. Please install Ryu controller."
+    # Check if virtual environment exists
+    if [ ! -d "$VENV_PATH" ]; then
+        print_error "Virtual environment not found at $VENV_PATH"
+        print_error "Please run: python3.9 -m venv venv_sdnhoney && source venv_sdnhoney/bin/activate && pip install -r requirements.txt"
         exit 1
     fi
     
-    # Check if python3 is available
-    if ! command -v python3 &> /dev/null; then
-        print_error "python3 not found. Please install Python 3."
+    # Check if ryu-manager is available in venv
+    if [ ! -f "$VENV_PATH/bin/ryu-manager" ]; then
+        print_error "ryu-manager not found in virtual environment."
+        print_error "Please run: source venv_sdnhoney/bin/activate && pip install ryu==4.34"
+        exit 1
+    fi
+    
+    # Check if python3 is available in venv
+    if [ ! -f "$VENV_PATH/bin/python" ]; then
+        print_error "Python not found in virtual environment."
         exit 1
     fi
     
@@ -250,6 +269,7 @@ check_dependencies() {
     fi
     
     print_success "All dependencies found"
+    print_status "Using virtual environment: $VENV_PATH"
 }
 
 # Main execution

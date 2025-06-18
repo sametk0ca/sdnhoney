@@ -1,4 +1,4 @@
-# 🛡️ SDN Honeypot Security System
+# 🛡️ SHONET
 
 A comprehensive Software Defined Networking (SDN) security system with intelligent traffic analysis, ML-powered classification, and multi-layered honeypot deception. This project demonstrates real-time threat detection and automated traffic redirection in network environments.
 
@@ -7,26 +7,30 @@ A comprehensive Software Defined Networking (SDN) security system with intellige
 ## 🚀 Quick Start
 
 ### One-Command Startup
+
 ```bash
 ./start_system.sh
 ```
 
 ### System Status Check
+
 ```bash
 ./check_status.sh
 ```
 
 ### Access Points
-| Service             | URL                   | Port | Description                    |
-| ------------------- | --------------------- | ---- | ------------------------------ |
-| **Presentation**    | http://localhost:9000 | 9000 | Academic showcase website      |
-| **Real-time Monitor** | http://localhost:9000/monitoring | 9000 | Live system monitoring |
-| **Controller API**  | http://localhost:8080 | 8080 | SDN controller REST API        |
-| **Normal Server 1** | http://localhost:8001 | 8001 | h1 - Regular web service       |
-| **Normal Server 2** | http://localhost:8002 | 8002 | h2 - Regular web service       |
-| **Normal Server 3** | http://localhost:8003 | 8003 | h3 - Regular web service       |
-| **Triage Honeypot** | http://localhost:8004 | 8004 | h4 - ML-enabled honeypot       |
-| **Deep Honeypot**   | http://localhost:8005 | 8005 | h5 - Advanced honeypot         |
+
+| Service             | URL                                 | Port | Description               |
+| ------------------- | ----------------------------------- | ---- | ------------------------- |
+| **Presentation**    | http://localhost:9000               | 9000 | Main project website      |
+| **Monitoring**      | http://localhost:9000/monitoring    | 9000 | Dedicated monitoring page |
+| **Documentation**   | http://localhost:9000/documentation | 9000 | Project documentation     |
+| **Controller API**  | http://localhost:8080               | 8080 | SDN controller REST API   |
+| **Normal Server 1** | http://localhost:8001               | 8001 | h1 - Regular web service  |
+| **Normal Server 2** | http://localhost:8002               | 8002 | h2 - Regular web service  |
+| **Normal Server 3** | http://localhost:8003               | 8003 | h3 - Regular web service  |
+| **Triage Honeypot** | http://localhost:8004               | 8004 | h4 - ML-enabled honeypot  |
+| **Deep Honeypot**   | http://localhost:8005               | 8005 | h5 - Advanced honeypot    |
 
 ---
 
@@ -36,7 +40,7 @@ The system consists of **7 major components** working together to provide intell
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
-│                    SDN HONEYPOT SYSTEM                          │
+│                         SHONET SYSTEM                           │
 ├─────────────────────────────────────────────────────────────────┤
 │  Presentation (9000) ←→ Controller (8080) ←→ ML Model           │
 │         ↕                    ↕                    ↕             │
@@ -52,6 +56,7 @@ The system consists of **7 major components** working together to provide intell
 ```
 
 ### Network Layout
+
 ```
                     🎮 SDN Controller (Port 6653)
                            |
@@ -78,6 +83,7 @@ The system consists of **7 major components** working together to provide intell
 **Advanced Ryu-based OpenFlow controller with intelligent traffic management**
 
 #### Key Features:
+
 - **Real-time Traffic Classification**: Analyzes packet patterns for threat detection
 - **ML Integration**: Receives binary classifications (1=malicious, 0=benign) from honeypots
 - **Dynamic Flow Installation**: Creates bidirectional flows for seamless redirection
@@ -85,6 +91,7 @@ The system consists of **7 major components** working together to provide intell
 - **Baseline Active IPs**: Maintains 6 active IPs for monitoring (all hosts)
 
 #### Traffic Flow Logic:
+
 ```python
 # Classification Logic
 if classification == 'malicious':
@@ -96,6 +103,7 @@ else:
 ```
 
 #### REST API Endpoints:
+
 - `GET /api/stats` - System statistics
 - `POST /honeypot/classification` - Receive ML classifications
 - `POST /api/reset-stats` - Reset system for demo
@@ -105,6 +113,7 @@ else:
 **Flask-based monitoring dashboard with live statistics**
 
 #### Features:
+
 - **Live Traffic Monitoring**: Real-time active IP count and flow statistics
 - **Threat Visualization**: Suspicious and malicious IP tracking
 - **Service Status**: Health monitoring for all network components
@@ -116,16 +125,18 @@ else:
 **Legitimate web services with proper authentication**
 
 #### Characteristics:
+
 - **Valid Credentials**: Accept legitimate user logins
 - **Full Web Interface**: Login forms, admin panels, logout functionality
 - **Comprehensive Logging**: Track all access attempts
 - **Health Endpoints**: `/health` for service monitoring
 
 #### Valid Credentials:
+
 ```python
 VALID_CREDENTIALS = {
     'admin': 'password123',
-    'user': 'userpass', 
+    'user': 'userpass',
     'john': 'johnpass'
 }
 ```
@@ -135,12 +146,14 @@ VALID_CREDENTIALS = {
 **ML-powered initial classification honeypot**
 
 #### Core Function:
+
 - **Rejects All Credentials**: No valid logins accepted
 - **ML Integration**: Uses simplified ML model for traffic analysis
 - **Real-time Classification**: Analyzes each request and sends results to controller
 - **Binary Decision Making**: Returns 1 (malicious) or 0 (benign)
 
 #### ML Classification Process:
+
 ```python
 def analyze_traffic_with_ml(source_ip, username=None):
     # Prepare features for ML model
@@ -149,10 +162,10 @@ def analyze_traffic_with_ml(source_ip, username=None):
         'user_agent': request.headers.get('User-Agent'),
         'failed_attempts': failed_attempts[source_ip]
     }
-    
+
     # Get ML prediction (1 or 0)
     ml_prediction, risk_score = classify_traffic(source_ip, request_data)
-    
+
     # Send to controller for traffic redirection
     send_to_controller(classification, source_ip, risk_score, ml_prediction)
 ```
@@ -162,6 +175,7 @@ def analyze_traffic_with_ml(source_ip, username=None):
 **Advanced deception environment for malicious actors**
 
 #### Features:
+
 - **Accepts All Credentials**: Successful login with any credentials
 - **Elaborate Fake Environment**: Realistic admin panels and system interfaces
 - **Advanced Logging**: Detailed capture of all malicious activities
@@ -172,6 +186,7 @@ def analyze_traffic_with_ml(source_ip, username=None):
 **Simplified machine learning model for binary threat classification**
 
 #### Risk Score Calculation:
+
 ```python
 risk_score = 0.0
 
@@ -200,6 +215,7 @@ ml_prediction = 1 if risk_score >= 0.6 else 0  # 60% threshold
 ```
 
 #### Features:
+
 - **Feature Extraction**: Username, user agent, request patterns
 - **Consistent Classification**: IP-based behavior tracking
 - **Binary Output**: 1 (malicious) or 0 (benign)
@@ -210,14 +226,15 @@ ml_prediction = 1 if risk_score >= 0.6 else 0  # 60% threshold
 **Mininet tree topology with depth=3**
 
 #### Host Configuration:
-| Host | IP Address | Port | Type | Purpose |
-|------|------------|------|------|---------|
-| h1 | 10.0.0.1 | 8001 | Normal Server | Web service with authentication |
-| h2 | 10.0.0.2 | 8002 | Normal Server | Web service with authentication |
-| h3 | 10.0.0.3 | 8003 | Normal Server | Web service with authentication |
-| h4 | 10.0.0.4 | 8004 | Triage Honeypot | ML-powered traffic classifier |
-| h5 | 10.0.0.5 | 8005 | Deep Honeypot | Advanced deception environment |
-| h6 | 10.0.0.6 | - | External Client | Simulates external traffic |
+
+| Host | IP Address | Port | Type            | Purpose                         |
+| ---- | ---------- | ---- | --------------- | ------------------------------- |
+| h1   | 10.0.0.1   | 8001 | Normal Server   | Web service with authentication |
+| h2   | 10.0.0.2   | 8002 | Normal Server   | Web service with authentication |
+| h3   | 10.0.0.3   | 8003 | Normal Server   | Web service with authentication |
+| h4   | 10.0.0.4   | 8004 | Triage Honeypot | ML-powered traffic classifier   |
+| h5   | 10.0.0.5   | 8005 | Deep Honeypot   | Advanced deception environment  |
+| h6   | 10.0.0.6   | -    | External Client | Simulates external traffic      |
 
 ---
 
@@ -226,17 +243,19 @@ ml_prediction = 1 if risk_score >= 0.6 else 0  # 60% threshold
 ### Traffic Flow Process
 
 #### Step 1: Request Interception
+
 ```python
 # SDN Controller captures incoming packet
 @set_ev_cls(ofp_event.EventOFPPacketIn, MAIN_DISPATCHER)
 def packet_in_handler(self, ev):
     # Extract packet information
     src_ip = packet_info['src_ip']
-    dst_ip = packet_info['dst_ip'] 
+    dst_ip = packet_info['dst_ip']
     request_data = packet_info['http_data']
 ```
 
 #### Step 2: Feature Extraction
+
 ```python
 features = {
     'source_ip': '10.0.0.6',
@@ -249,6 +268,7 @@ features = {
 ```
 
 #### Step 3: ML Analysis
+
 ```python
 risk_score = ml_classifier.analyze(features)
 prediction = 1 if risk_score >= 0.6 else 0
@@ -256,6 +276,7 @@ classification = 'malicious' if prediction == 1 else 'benign'
 ```
 
 #### Step 4: Routing Decision
+
 ```python
 if risk_score < 0.4:
     destination = random.choice(['h1', 'h2', 'h3'])  # Normal servers
@@ -266,6 +287,7 @@ else:  # risk_score >= 0.6
 ```
 
 #### Step 5: Flow Installation & Redirect
+
 ```python
 # Install OpenFlow rule for redirection
 match = parser.OFPMatch(ipv4_src=src_ip)
@@ -274,15 +296,16 @@ self.add_flow(datapath, priority=100, match=match, actions=actions)
 ```
 
 ### Classification Thresholds
+
 ```python
 if risk_score < 0.4:
     classification = "benign"
     destination_tier = "normal_servers"
-    
+
 elif 0.4 <= risk_score < 0.6:
-    classification = "suspicious" 
+    classification = "suspicious"
     destination_tier = "triage_honeypot"
-    
+
 else:  # risk_score >= 0.6
     classification = "malicious"
     destination_tier = "deep_honeypot"
@@ -293,6 +316,7 @@ else:  # risk_score >= 0.6
 ## 🎮 Live Demo Commands
 
 ### Basic System Test
+
 ```bash
 # Start the complete system
 ./start_system.sh
@@ -308,26 +332,31 @@ mininet> h6 curl http://10.0.0.4:8004/    # Access honeypot
 ### Quick Demo Commands (Copy & Paste)
 
 #### 1. Normal Traffic
+
 ```bash
 h6 curl 10.0.0.1:8001
 ```
 
 #### 2. Honeypot Test (Normal)
+
 ```bash
 h6 curl 10.0.0.4:8004
 ```
 
 #### 3. Malicious Attack 1 (Admin)
+
 ```bash
 h6 curl -X POST -d "username=admin&password=admin" 10.0.0.4:8004
 ```
 
 #### 4. Malicious Attack 2 (Hacker)
+
 ```bash
 h6 curl -X POST -d "username=hacker&password=123" 10.0.0.4:8004
 ```
 
 #### 5. Mixed Scenario
+
 ```bash
 h6 curl 10.0.0.2:8002
 h6 curl -X POST -d "username=test&password=wrongpass" 10.0.0.4:8004
@@ -336,6 +365,7 @@ h6 curl -X POST -d "username=root&password=toor" 10.0.0.4:8004
 ```
 
 ### Real-time Monitoring
+
 ```bash
 # Watch ML classifications (new terminal)
 tail -f logs/triage_honeypot.log
@@ -354,25 +384,30 @@ curl http://localhost:8080/api/stats
 ### 📋 Presentation Flow (15-20 minutes)
 
 #### **Opening (2 minutes)**
-**"Good morning/afternoon professors. Today I'll present my SDN Honeypot project with Machine Learning integration."**
+
+**"Good morning/afternoon professors. Today I'll present SHONET - my Software-defined Honeypot-Oriented Network Engagement and Tracking project."**
 
 **Key Points:**
-- Show the landing page: **"Intelligent SDN Honeypot"**
+
+- Show the landing page: **"SHONET"**
 - Explain this is a cybersecurity research project
 - Mention the innovative combination of SDN + ML + Honeypots
 
 #### **Technical Implementation (8 minutes)**
 
 ##### Architecture Overview
+
 **"Let me show you the technical implementation."**
 
 **Point out on website:**
+
 - **SDN Controller**: Ryu-based with OpenFlow 1.3
 - **ML Integration**: Binary classification (1=malicious, 0=benign)
 - **Network Simulation**: Mininet with 7 switches
 - **Real-time Monitoring**: Comprehensive logging and APIs
 
 ##### Key Technical Achievements:
+
 1. **Intelligent Flow Management**: Priority-based rules (200-0 levels)
 2. **ML Model**: Analyzes request frequency, user agents, behavioral patterns
 3. **Bidirectional Traffic Handling**: Complete TCP session management
@@ -381,34 +416,42 @@ curl http://localhost:8080/api/stats
 #### **Live Demonstration (5-7 minutes)**
 
 ##### Demo Setup
+
 **"Now let me show you the system in action."**
 
-1. **Show Live Status**: Point to the terminal-style status display
-2. **Network Connectivity**: "As you can see, we have 100% connectivity, 0% packet loss"
-3. **All Services Active**: "All 5 services are running successfully"
+1. **Show System Status**: Point to the system status banner on homepage
+2. **Navigate to Monitoring**: "Let me show you our dedicated monitoring dashboard"
+3. **Live Monitoring Dashboard**: Access the monitoring page at `/monitoring`
+4. **Real-time Data**: "Here you can see live traffic analysis and component status"
 
 ##### What to Explain During Demo:
-1. **"Here you can see the ML model analyzing each request"**
-2. **"Notice the risk scores: normal traffic gets ~0.2, suspicious gets ~0.6"**
-3. **"The system automatically classifies and logs every interaction"**
-4. **"All data is sent to the SDN controller for traffic management"**
+
+1. **"The monitoring dashboard shows real-time system components and their status"**
+2. **"Notice the traffic charts updating with each request we send"**
+3. **"The ML model analyzes each request and updates the threat distribution"**
+4. **"All classification data flows to the SDN controller for traffic management"**
 
 ### 🎯 Demo Script
 
 #### Demo 1 - Normal Traffic
-"İlk olarak normal bir sunucuya GET isteği gönderiyoruz. Bu normal kullanıcı davranışını simüle ediyor."
 
-#### Demo 2 - Honeypot Access  
-"Şimdi triage honeypot'a basit bir istek gönderiyoruz. Henüz şüpheli bir davranış yok."
+"İlk olarak normal bir sunucuya GET isteği gönderiyoruz. Bu normal kullanıcı davranışını simüle ediyor. Monitoring dashboard'unda normal trafik grafiğinin artışını görebilirsiniz."
+
+#### Demo 2 - Honeypot Access
+
+"Şimdi triage honeypot'a basit bir istek gönderiyoruz. Henüz şüpheli bir davranış yok, risk skoru düşük."
 
 #### Demo 3 - Malicious Attack
+
 "Bu sefer tipik bir brute force saldırısı yapıyoruz. Admin/admin kombinasyonu saldırganların sık kullandığı bir yöntem."
 
 #### Demo 4 - ML Detection
-"Görüyorsunuz ki ML modelimiz bu saldırıyı anında tespit etti ve 'Malicious' olarak sınıflandırdı. Risk skoru 0.8'in üzerinde."
+
+"Görüyorsunuz ki ML modelimiz bu saldırıyı anında tespit etti ve 'Malicious' olarak sınıflandırdı. Risk skoru 0.8'in üzerinde. Monitoring dashboard'unda malicious traffic artışını görebilirsiniz."
 
 #### Demo 5 - Real-time Monitoring
-"Monitoring dashboard'unda tüm bu değişiklikleri gerçek zamanlı olarak izleyebiliyoruz. Kırmızı alanlar artış gösteriyor."
+
+"Monitoring sayfasında tüm bu değişiklikleri gerçek zamanlı olarak izleyebiliyoruz. Component health status'ları, traffic charts ve threat distribution grafikleri sürekli güncelleniyor."
 
 ### 💡 Q&A Preparation
 
@@ -434,46 +477,53 @@ curl http://localhost:8080/api/stats
 ## ✨ Key Features
 
 ### 🎯 Advanced SDN Capabilities
+
 - **Priority-based Flow Rules**: 200-0 priority levels for traffic management
 - **Bidirectional Traffic Handling**: Complete TCP session management
 - **Real-time Flow Redirection**: Automatic threat traffic routing
 - **Topology-aware Routing**: Intelligent path calculation
 
 ### 🧠 Machine Learning Integration
+
 - **Binary Classification**: 1=malicious, 0=benign threat detection
 - **Feature Analysis**: Request frequency, user agents, behavioral patterns
 - **Configurable Thresholds**: 0.6 risk score default with customization
 - **Real-time Processing**: Sub-second classification speed
 
 ### 📊 Comprehensive Monitoring
+
 - **Real-time Dashboard**: Live system status and activity monitoring
 - **JSON Structured Logs**: Detailed request and response logging
 - **API Endpoints**: RESTful interfaces for system integration
 - **Performance Metrics**: Network connectivity and service health
 
 ### 🎓 Academic Presentation
-- **Professional Landing Page**: Complete project showcase
-- **Live Demo Capabilities**: Interactive command demonstrations
-- **Technical Documentation**: Comprehensive guides and explanations
-- **Presentation Ready**: Optimized for academic evaluation
+
+- **Professional Landing Page**: Clean project showcase and overview
+- **Dedicated Monitoring Dashboard**: Real-time traffic analysis and system status
+- **Comprehensive Documentation**: Complete technical guides and explanations
+- **Presentation Ready**: Optimized for academic evaluation and demonstrations
 
 ---
 
 ## 🏆 Technical Achievements
 
 ### 🔬 Research Innovation
+
 - **Novel SDN-ML Integration**: First-of-its-kind real-time classification
 - **Proactive Security**: Beyond traditional reactive approaches
 - **Educational Platform**: Perfect for cybersecurity research and learning
 - **Scalable Architecture**: Modular design for future extensions
 
 ### ⚙️ Implementation Excellence
+
 - **Production-Ready Code**: Comprehensive error handling and logging
 - **Portable Deployment**: Works on any Linux system
 - **One-Command Operation**: Complete system automation
 - **Clean Architecture**: Well-documented, modular codebase
 
 ### 📈 Performance Metrics
+
 - **100% Network Connectivity**: Zero packet loss in testing
 - **Sub-10ms ML Processing**: Real-time threat classification
 - **Comprehensive Coverage**: All attack vectors monitored
@@ -484,6 +534,7 @@ curl http://localhost:8080/api/stats
 ## 🔧 System Requirements
 
 ### Software Dependencies
+
 - **Operating System**: Linux (Ubuntu 20.04+ recommended)
 - **Python**: 3.8+ with Flask, Requests packages
 - **SDN Controller**: Ryu framework
@@ -491,6 +542,7 @@ curl http://localhost:8080/api/stats
 - **Web Browser**: Modern browser for presentation interface
 
 ### Hardware Requirements
+
 - **CPU**: 2+ cores recommended
 - **RAM**: 4GB minimum, 8GB recommended
 - **Storage**: 2GB free space
@@ -532,24 +584,29 @@ sdnhoney/
 ### Common Issues
 
 #### Services Not Responding
+
 ```bash
 # Quick restart
-python3 start_services.py
+CTRL + C
+./start_system.sh
 ```
 
 #### Network Issues
+
 ```bash
 # Clean Mininet
 sudo mn -c
 ```
 
 #### Port Conflicts
+
 ```bash
 # Check running services
 ./check_status.sh
 ```
 
 ### Log Files
+
 - **Controller**: `logs/controller.log`
 - **Honeypots**: `logs/triage_honeypot.log`, `logs/deep_honeypot.log`
 - **Services**: `logs/h1_service.log`, `logs/h2_service.log`, etc.
@@ -568,7 +625,7 @@ For technical support or questions about this project:
 
 ## 🏁 Conclusion
 
-This SDN Honeypot Security System represents a cutting-edge approach to cybersecurity, combining Software-Defined Networking, Machine Learning, and advanced honeypot techniques. The system provides:
+SHONET (Software-defined Honeypot-Oriented Network Engagement and Tracking) represents a cutting-edge approach to cybersecurity, combining Software-Defined Networking, Machine Learning, and advanced honeypot techniques. The system provides:
 
 - **Real-time threat detection** with ML-powered classification
 - **Automated traffic redirection** using SDN flow rules

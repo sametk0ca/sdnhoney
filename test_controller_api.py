@@ -31,6 +31,9 @@ def send_classification(source_ip: str, classification: str, risk_score: float, 
         response = requests.post(url, json=data, timeout=5)
         if response.status_code == 200:
             print(f"✅ Sent {classification} classification for {source_ip} (risk: {risk_score:.2f})")
+            
+            # Ayrıca IP'yi traffic_stats'a da ekle ki active_ips sayısı artsın
+            add_to_traffic_stats(source_ip)
             return True
         else:
             print(f"❌ Failed to send classification: {response.status_code}")
@@ -38,6 +41,24 @@ def send_classification(source_ip: str, classification: str, risk_score: float, 
     except Exception as e:
         print(f"❌ Error sending classification: {e}")
         return False
+
+def add_to_traffic_stats(source_ip: str):
+    """IP'yi controller'ın traffic_stats'ına ekle"""
+    url = f"{CONTROLLER_URL}/api/add-traffic"
+    
+    data = {
+        'source_ip': source_ip,
+        'packets': random.randint(1, 5)
+    }
+    
+    try:
+        response = requests.post(url, json=data, timeout=5)
+        if response.status_code == 200:
+            print(f"  📡 Added {source_ip} to traffic tracking")
+        else:
+            print(f"  ⚠️  Failed to add {source_ip} to traffic tracking")
+    except Exception as e:
+        print(f"  ⚠️  Error adding {source_ip} to traffic tracking: {e}")
 
 def get_controller_stats():
     """Controller istatistiklerini al"""

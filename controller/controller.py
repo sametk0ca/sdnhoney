@@ -209,12 +209,12 @@ class HoneypotSDNController(app_manager.RyuApp):
         # Regular L2 switching for all traffic
         self._l2_switching(datapath, pkt, in_port, msg)
         
-        # Log web traffic attempts for debugging
+        # Handle web traffic for flow analysis and honeypot redirection
         tcp_pkt = pkt.get_protocol(tcp.tcp)
         if tcp_pkt and tcp_pkt.dst_port in [80, 8001, 8002, 8003, 8004, 8005]:
             self.logger.info(f"Web traffic detected: {src_ip}:{tcp_pkt.src_port} -> {dst_ip}:{tcp_pkt.dst_port}")
-            # classification = self._classify_traffic(src_ip, dst_ip, tcp_pkt)
-            # self._handle_web_traffic(datapath, pkt, in_port, src_ip, dst_ip, classification, msg)
+            classification = self._classify_traffic(src_ip, dst_ip, tcp_pkt)
+            self._handle_web_traffic(datapath, pkt, in_port, src_ip, dst_ip, classification, msg)
 
     def _classify_traffic(self, src_ip, dst_ip, tcp_pkt):
         """Classify traffic as normal, suspicious, or malicious"""
@@ -595,7 +595,7 @@ class HoneypotController(ControllerBase):
             'active_ips': len(self.controller.traffic_stats),
             'suspicious_ips': list(self.controller.suspicious_ips),
             'malicious_ips': list(self.controller.malicious_ips),
-            'flow_count': len(self.controller.flow_stats)
+            'flow_count': len(self.controller.suspicious_ips) + len(self.controller.malicious_ips)
         }
         
         return Response(content_type='application/json',
@@ -608,12 +608,33 @@ class HoneypotController(ControllerBase):
             'active_ips': len(self.controller.traffic_stats),
             'suspicious_ips': list(self.controller.suspicious_ips),
             'malicious_ips': list(self.controller.malicious_ips),
-            'flow_count': len(self.controller.flow_stats),
+            'flow_count': len(self.controller.suspicious_ips) + len(self.controller.malicious_ips),
             'last_update': time.strftime('%H:%M:%S')
         }
         
         return Response(content_type='application/json',
                       body=json.dumps(stats).encode('utf-8'))
+
+    @route('api', '/api/add-traffic', methods=['POST'])
+    def add_traffic(self, req, **kwargs):
+        """Add IP to traffic stats for testing purposes"""
+        try:
+            data = json.loads(req.body.decode('utf-8'))
+            source_ip = data['source_ip']
+            current_time = time.time()
+            
+            # Add to traffic stats
+            self.controller.traffic_stats[source_ip] = {
+                'packets': data.get('packets', 1),
+                'last_seen': current_time
+            }
+            
+            return Response(content_type='application/json',
+                          body=json.dumps({'status': 'success', 'ip_added': source_ip}).encode('utf-8'))
+        except Exception as e:
+            return Response(content_type='application/json',
+                          body=json.dumps({'status': 'error', 'message': str(e)}).encode('utf-8'),
+                          status=400)
 
     @route('api', '/api/reset-stats', methods=['POST'])
     def reset_stats(self, req, **kwargs):

@@ -3,10 +3,22 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{% block title %}SDN Honeypot Security System{% endblock %}</title>
+    <title>{% block title %}SHONET{% endblock %}</title>
     
     <!-- Favicon -->
-    <link rel="icon" type="image/png" href="{{ url_for('static', filename='images/honeypotlogo.png') }}">
+    <link rel="icon" type="image/x-icon" href="{{ url_for('static', filename='images/honeypotlogo.png') }}">
+    
+    <!-- Meta Description -->
+    <meta name="description" content="SHONET - Advanced cybersecurity research project demonstrating intelligent network security through Software Defined Networking and honeypot deception.">
+    <meta name="keywords" content="SDN, Honeypot, Cybersecurity, Machine Learning, Network Security, OpenFlow, Ryu Controller">
+    <meta name="author" content="Academic Research Project">
+    
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="http://localhost:9000/">
+    <meta property="og:title" content="SHONET">
+    <meta property="og:description" content="Advanced cybersecurity research project with ML-driven threat detection">
+    <meta property="og:image" content="{{ url_for('static', filename='images/honeypotlogo.png') }}">
     
     <!-- Bootstrap CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
@@ -270,10 +282,10 @@
         <div class="container">
             <a class="navbar-brand d-flex align-items-center" href="{{ url_for('index') }}">
                 <img src="{{ url_for('static', filename='images/honeypotlogo.png') }}" 
-                     alt="Honeypot Logo" 
+                     alt="SHONET Logo" 
                      class="logo-transparent"
                      style="height: 35px; width: 35px; margin-right: 10px;">
-                SDN Honeypot System
+                SHONET
             </a>
             
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
@@ -312,7 +324,7 @@
         <div class="container">
             <div class="row">
                 <div class="col-md-6">
-                    <h5><i class="fas fa-shield-alt"></i> SDN Honeypot Security System</h5>
+                    <h5><i class="fas fa-shield-alt"></i> SHONET</h5>
                     <p>A comprehensive research project demonstrating intelligent network security through Software Defined Networking, machine learning, and honeypot deception techniques.</p>
                 </div>
                 <div class="col-md-3">
@@ -320,7 +332,7 @@
                     <ul class="list-unstyled">
                         <li><a href="{{ url_for('monitoring') }}" class="text-light">Real-time Monitoring</a></li>
                         <li><a href="{{ url_for('documentation') }}" class="text-light">Documentation</a></li>
-                        <li><a href="{{ url_for('index') }}#monitoring" class="text-light">System Status</a></li>
+                        <li><a href="{{ url_for('architecture') }}" class="text-light">Architecture</a></li>
                     </ul>
                 </div>
                 <div class="col-md-3">
@@ -335,7 +347,7 @@
             </div>
             <hr class="my-4">
             <div class="text-center">
-                <p>&copy; 2025 SDN Honeypot Security System. Educational and Research Purpose. Samet Koca</p>
+                <p>&copy; 2025 SHONET. Educational and Research Purpose. Samet Koca</p>
             </div>
         </div>
     </footer>

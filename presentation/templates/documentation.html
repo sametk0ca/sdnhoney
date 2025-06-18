@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 
-{% block title %}Documentation - SDN Honeypot Security System{% endblock %}
+{% block title %}Documentation - SHONET{% endblock %}
 
 {% block extra_css %}
 <style>
@@ -223,63 +223,6 @@
     </div>
 </section>
 
-<!-- Quick Navigation -->
-<section class="py-5" style="background: rgba(0,0,0,0.2);">
-    <div class="container">
-        <div class="row text-center">
-            <div class="col-12 mb-4">
-                <h2>Quick Navigation</h2>
-                <p class="lead">Jump to different sections of the system</p>
-            </div>
-        </div>
-        
-        <div class="row g-4">
-            <div class="col-md-3">
-                <div class="card h-100 text-center">
-                    <div class="card-body">
-                        <i class="fas fa-play-circle fa-3x text-primary mb-3"></i>
-                        <h5 style="color: white !important;">Live Demo</h5>
-                        <p style="color: white !important;">Try the interactive demo with real commands</p>
-                        <a href="{{ url_for('monitoring') }}" class="btn btn-primary">Real-time Monitoring</a>
-                    </div>
-                </div>
-            </div>
-            
-            <div class="col-md-3">
-                <div class="card h-100 text-center">
-                    <div class="card-body">
-                        <i class="fas fa-sitemap fa-3x text-success mb-3"></i>
-                        <h5 style="color: white !important;">Architecture</h5>
-                        <p style="color: white !important;">Explore the system architecture and components</p>
-                        <a href="{{ url_for('architecture') }}" class="btn btn-success">View Architecture</a>
-                    </div>
-                </div>
-            </div>
-            
-            <div class="col-md-3">
-                <div class="card h-100 text-center">
-                    <div class="card-body">
-                        <i class="fas fa-chart-line fa-3x text-warning mb-3"></i>
-                        <h5 style="color: white !important;">Monitoring</h5>
-                        <p style="color: white !important;">Real-time system monitoring and statistics</p>
-                        <a href="{{ url_for('monitoring') }}" class="btn btn-warning">View Monitoring</a>
-                    </div>
-                </div>
-            </div>
-            
-            <div class="col-md-3">
-                <div class="card h-100 text-center">
-                    <div class="card-body">
-                        <i class="fas fa-brain fa-3x text-info mb-3"></i>
-                        <h5 style="color: white !important;">ML Model</h5>
-                        <p style="color: white !important;">Machine learning model details and analysis</p>
-                        <a href="{{ url_for('ml_model') }}" class="btn btn-info">View ML Model</a>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-</section>
 
 <!-- Back to Top Button -->
 <button class="back-to-top" id="backToTop" onclick="scrollToTop()">
